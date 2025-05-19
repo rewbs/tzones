@@ -117,7 +117,8 @@
                 grid-template-columns: 1fr;
             }
         }
-        .timezone-selector select {
+        .timezone-selector select,
+        .timezone-selector input {
             padding: 8px;
             border-radius: 4px;
             border: 1px solid #ccc;
@@ -419,26 +420,73 @@
             
             // Available timezones for selection
             const availableTimezones = [
-                { name: "Sydney", timezone: "Australia/Sydney" },
-                { name: "Melbourne", timezone: "Australia/Melbourne" },
-                { name: "Tokyo", timezone: "Asia/Tokyo" },
-                { name: "Singapore", timezone: "Asia/Singapore" },
-                { name: "Hong Kong", timezone: "Asia/Hong_Kong" },
-                { name: "Bangalore", timezone: "Asia/Kolkata" },
-                { name: "New Delhi", timezone: "Asia/Kolkata" },
-                { name: "Dubai", timezone: "Asia/Dubai" },
-                { name: "Moscow", timezone: "Europe/Moscow" },
-                { name: "Paris", timezone: "Europe/Paris" },
-                { name: "London", timezone: "Europe/London" },
-                { name: "Lisbon", timezone: "Europe/Lisbon" },
-                { name: "New York", timezone: "America/New_York" },
-                { name: "Toronto", timezone: "America/Toronto" },
-                { name: "Chicago", timezone: "America/Chicago" },
-                { name: "Denver", timezone: "America/Denver" },
-                { name: "San Francisco", timezone: "America/Los_Angeles" },
-                { name: "Los Angeles", timezone: "America/Los_Angeles" },
-                { name: "Anchorage", timezone: "America/Anchorage" },
-                { name: "Honolulu", timezone: "Pacific/Honolulu" }
+                { name: "Sydney", timezone: "Australia/Sydney", aliases: ["AEST"] },
+                { name: "Melbourne", timezone: "Australia/Melbourne", aliases: ["AEST"] },
+                { name: "Brisbane", timezone: "Australia/Brisbane", aliases: ["AEST"] },
+                { name: "Perth", timezone: "Australia/Perth", aliases: ["AWST"] },
+                { name: "Adelaide", timezone: "Australia/Adelaide", aliases: ["ACST"] },
+                { name: "Tokyo", timezone: "Asia/Tokyo", aliases: ["JST"] },
+                { name: "Seoul", timezone: "Asia/Seoul", aliases: ["KST"] },
+                { name: "Shanghai", timezone: "Asia/Shanghai", aliases: ["CST"] },
+                { name: "Beijing", timezone: "Asia/Shanghai", aliases: ["CST"] },
+                { name: "Singapore", timezone: "Asia/Singapore", aliases: ["SGT"] },
+                { name: "Hong Kong", timezone: "Asia/Hong_Kong", aliases: ["HKT"] },
+                { name: "Bangkok", timezone: "Asia/Bangkok", aliases: ["ICT"] },
+                { name: "Ho Chi Minh City", timezone: "Asia/Ho_Chi_Minh", aliases: ["ICT"] },
+                { name: "Jakarta", timezone: "Asia/Jakarta", aliases: ["WIB"] },
+                { name: "Manila", timezone: "Asia/Manila", aliases: ["PHT"] },
+                { name: "Bangalore", timezone: "Asia/Kolkata", aliases: ["IST"] },
+                { name: "New Delhi", timezone: "Asia/Kolkata", aliases: ["IST"] },
+                { name: "Kathmandu", timezone: "Asia/Kathmandu", aliases: ["NPT"] },
+                { name: "Karachi", timezone: "Asia/Karachi", aliases: ["PKT"] },
+                { name: "Colombo", timezone: "Asia/Colombo", aliases: ["IST"] },
+                { name: "Dubai", timezone: "Asia/Dubai", aliases: ["GST"] },
+                { name: "Riyadh", timezone: "Asia/Riyadh", aliases: ["AST"] },
+                { name: "Tehran", timezone: "Asia/Tehran", aliases: ["IRST"] },
+                { name: "Jerusalem", timezone: "Asia/Jerusalem", aliases: ["IST"] },
+                { name: "Istanbul", timezone: "Europe/Istanbul", aliases: ["TRT"] },
+                { name: "Moscow", timezone: "Europe/Moscow", aliases: ["MSK"] },
+                { name: "Paris", timezone: "Europe/Paris", aliases: ["CET", "CEST"] },
+                { name: "Berlin", timezone: "Europe/Berlin", aliases: ["CET", "CEST"] },
+                { name: "Rome", timezone: "Europe/Rome", aliases: ["CET", "CEST"] },
+                { name: "Madrid", timezone: "Europe/Madrid", aliases: ["CET", "CEST"] },
+                { name: "Amsterdam", timezone: "Europe/Amsterdam", aliases: ["CET", "CEST"] },
+                { name: "Helsinki", timezone: "Europe/Helsinki", aliases: ["EET", "EEST"] },
+                { name: "Stockholm", timezone: "Europe/Stockholm", aliases: ["CET", "CEST"] },
+                { name: "Dublin", timezone: "Europe/Dublin", aliases: ["GMT", "IST"] },
+                { name: "London", timezone: "Europe/London", aliases: ["GMT", "BST"] },
+                { name: "Lisbon", timezone: "Europe/Lisbon", aliases: ["WET", "WEST"] },
+                { name: "Reykjavik", timezone: "Atlantic/Reykjavik", aliases: ["GMT"] },
+                { name: "Cairo", timezone: "Africa/Cairo", aliases: ["EET"] },
+                { name: "Johannesburg", timezone: "Africa/Johannesburg", aliases: ["SAST"] },
+                { name: "Nairobi", timezone: "Africa/Nairobi", aliases: ["EAT"] },
+                { name: "Lagos", timezone: "Africa/Lagos", aliases: ["WAT"] },
+                { name: "Casablanca", timezone: "Africa/Casablanca", aliases: ["WET"] },
+                { name: "New York", timezone: "America/New_York", aliases: ["EST", "EDT"] },
+                { name: "Atlanta", timezone: "America/New_York", aliases: ["EST", "EDT"] },
+                { name: "Miami", timezone: "America/New_York", aliases: ["EST", "EDT"] },
+                { name: "Toronto", timezone: "America/Toronto", aliases: ["EST", "EDT"] },
+                { name: "Chicago", timezone: "America/Chicago", aliases: ["CST", "CDT"] },
+                { name: "Houston", timezone: "America/Chicago", aliases: ["CST", "CDT"] },
+                { name: "Mexico City", timezone: "America/Mexico_City", aliases: ["CST", "CDT"] },
+                { name: "Denver", timezone: "America/Denver", aliases: ["MST", "MDT"] },
+                { name: "Phoenix", timezone: "America/Phoenix", aliases: ["MST"] },
+                { name: "Vancouver", timezone: "America/Vancouver", aliases: ["PST", "PDT"] },
+                { name: "Seattle", timezone: "America/Los_Angeles", aliases: ["PST", "PDT"] },
+                { name: "San Francisco", timezone: "America/Los_Angeles", aliases: ["PST", "PDT"] },
+                { name: "Los Angeles", timezone: "America/Los_Angeles", aliases: ["PST", "PDT"] },
+                { name: "Anchorage", timezone: "America/Anchorage", aliases: ["AKST", "AKDT"] },
+                { name: "Honolulu", timezone: "Pacific/Honolulu", aliases: ["HST"] },
+                { name: "Santiago", timezone: "America/Santiago", aliases: ["CLT", "CLST"] },
+                { name: "Bogota", timezone: "America/Bogota", aliases: ["COT"] },
+                { name: "Caracas", timezone: "America/Caracas", aliases: ["VET"] },
+                { name: "Buenos Aires", timezone: "America/Argentina/Buenos_Aires", aliases: ["ART"] },
+                { name: "Sao Paulo", timezone: "America/Sao_Paulo", aliases: ["BRT", "BRST"] },
+                { name: "Lima", timezone: "America/Lima", aliases: ["PET"] },
+                { name: "Auckland", timezone: "Pacific/Auckland", aliases: ["NZST", "NZDT"] },
+                { name: "Fiji", timezone: "Pacific/Fiji", aliases: ["FJT"] },
+                { name: "Samoa", timezone: "Pacific/Apia", aliases: ["WSST", "WSDT"] },
+                { name: "Tahiti", timezone: "Pacific/Tahiti", aliases: ["TAHT"] }
             ];
             
             // App state
@@ -632,37 +680,33 @@
             function populateTimeZoneSelectors() {
                 const selectorContainer = document.getElementById('timezone-selector');
                 selectorContainer.innerHTML = '';
-                
+
                 selectedCities.forEach((city, index) => {
                     const selectorDiv = document.createElement('div');
-                    
-                    const select = document.createElement('select');
-                    select.id = `city-selector-${index}`;
-                    select.dataset.index = index;
-                    
-                    availableTimezones.forEach((tz) => {
-                        const option = document.createElement('option');
-                        option.value = tz.timezone;
-                        option.textContent = tz.name;
-                        if (tz.timezone === city.timezone) {
-                            option.selected = true;
-                        }
-                        select.appendChild(option);
-                    });
-                    
-                    select.addEventListener('change', function() {
+
+                    const input = document.createElement('input');
+                    input.setAttribute('list', 'timezone-options');
+                    input.className = 'timezone-input';
+                    input.id = `city-selector-${index}`;
+                    input.dataset.index = index;
+                    input.value = city.name;
+
+                    input.addEventListener('change', function() {
                         const selectedIndex = parseInt(this.dataset.index);
-                        const selectedOption = this.options[this.selectedIndex];
-                        selectedCities[selectedIndex] = {
-                            id: selectedCities[selectedIndex].id,
-                            name: selectedOption.textContent,
-                            timezone: selectedOption.value
-                        };
-                        updateTimes();
-                        updateUrlHash();
+                        const options = Array.from(document.getElementById('timezone-options').options);
+                        const match = options.find(o => o.value === this.value);
+                        if (match) {
+                            selectedCities[selectedIndex] = {
+                                id: selectedCities[selectedIndex].id,
+                                name: match.dataset.name || match.value,
+                                timezone: match.dataset.timezone
+                            };
+                            updateTimes();
+                            updateUrlHash();
+                        }
                     });
-                    
-                    selectorDiv.appendChild(select);
+
+                    selectorDiv.appendChild(input);
                     selectorContainer.appendChild(selectorDiv);
                 });
             }
@@ -794,9 +838,13 @@
                     // Check if the location is currently in DST
                     const isDST = checkIfDST(adjustedTime, city.timezone);
                     
+                    const offsetMinutes = -getTimezoneOffset(adjustedTime, city.timezone);
+                    const offsetHours = offsetMinutes / 60;
+                    const offsetStr = `UTC${offsetHours >= 0 ? '+' : ''}${Number.isInteger(offsetHours) ? offsetHours : offsetHours.toFixed(1)}`;
+
                     cityBox.innerHTML = `
                         <div class="day-night-icon">${getDayNightEmoji(localHour)}</div>
-                        <div class="city-name">${city.name}</div>
+                        <div class="city-name">${city.name} (${city.timezone}, ${offsetStr})</div>
                         <div class="city-date">${dateString}</div>
                         <div class="city-time-value">
                             <span class="time-icon">🕒</span>${timeString}
@@ -833,15 +881,50 @@
                     const options = { timeZone: timezone };
                     const localTime = date.toLocaleString('en-US', options);
                     const localDate = new Date(localTime);
-                    
+
                     return localDate.getTimezoneOffset();
                 } catch (e) {
                     console.error('Timezone offset error:', e);
                     return 0;
                 }
             }
+
+            function createTimeZoneDatalist() {
+                let datalist = document.getElementById('timezone-options');
+                if (!datalist) {
+                    datalist = document.createElement('datalist');
+                    datalist.id = 'timezone-options';
+                    document.body.appendChild(datalist);
+                }
+
+                datalist.innerHTML = '';
+                const now = new Date();
+                availableTimezones.forEach(tz => {
+                    const offset = -getTimezoneOffset(now, tz.timezone) / 60;
+                    const offsetStr = `UTC${offset >= 0 ? '+' : ''}${Number.isInteger(offset) ? offset : offset.toFixed(1)}`;
+
+                    // Option using the city name
+                    const nameOption = document.createElement('option');
+                    nameOption.value = tz.name;
+                    nameOption.textContent = `${tz.name} - ${tz.timezone} (${tz.aliases[0] || ''} ${offsetStr})`;
+                    nameOption.dataset.timezone = tz.timezone;
+                    nameOption.dataset.name = tz.name;
+                    datalist.appendChild(nameOption);
+
+                    // Options for abbreviations to aid searching
+                    tz.aliases.forEach(alias => {
+                        const aliasOption = document.createElement('option');
+                        aliasOption.value = `${alias} - ${tz.name}`;
+                        aliasOption.textContent = `${alias} - ${tz.name} (${tz.timezone} ${offsetStr})`;
+                        aliasOption.dataset.timezone = tz.timezone;
+                        aliasOption.dataset.name = tz.name;
+                        datalist.appendChild(aliasOption);
+                    });
+                });
+            }
             
             // Initialize the page
+            createTimeZoneDatalist();
             populateTimeZoneSelectors();
             updateTimes();
             
