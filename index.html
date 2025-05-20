@@ -109,7 +109,8 @@
             display: inline-block;
             vertical-align: middle;
         }
-        }
+        .timezone-input {
+            padding: 8px;
             border-radius: 4px;
             border: 1px solid #ccc;
             width: 100%;
@@ -338,8 +339,15 @@
             to {bottom: 30px; opacity: 1;}
         }
         @keyframes fadeout {
-            from {bottom: 30px; opacity: 1;} 
+            from {bottom: 30px; opacity: 1;}
             to {bottom: 0; opacity: 0;}
+        }
+
+        /* Globe container styling */
+        #globe-container {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
         }
     </style>
 </head>
@@ -389,6 +397,11 @@
     
     <div id="toast" class="toast">URL copied to clipboard!</div>
 
+    <div id="globe-container"></div>
+
+    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/globe.gl"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Set current date
@@ -402,6 +415,77 @@
                 { id: 3, name: "New York", timezone: "America/New_York" },
                 { id: 4, name: "Bangalore", timezone: "Asia/Kolkata" }
             ];
+
+            // Coordinates for cities used on the globe
+            const cityCoordinates = {
+                "Sydney": { lat: -33.8688, lng: 151.2093 },
+                "Melbourne": { lat: -37.8136, lng: 144.9631 },
+                "Brisbane": { lat: -27.4698, lng: 153.0251 },
+                "Perth": { lat: -31.9505, lng: 115.8605 },
+                "Adelaide": { lat: -34.9285, lng: 138.6007 },
+                "Tokyo": { lat: 35.6762, lng: 139.6503 },
+                "Seoul": { lat: 37.5665, lng: 126.978 },
+                "Shanghai": { lat: 31.2304, lng: 121.4737 },
+                "Beijing": { lat: 39.9042, lng: 116.4074 },
+                "Singapore": { lat: 1.3521, lng: 103.8198 },
+                "Hong Kong": { lat: 22.3193, lng: 114.1694 },
+                "Bangkok": { lat: 13.7563, lng: 100.5018 },
+                "Ho Chi Minh City": { lat: 10.8231, lng: 106.6297 },
+                "Jakarta": { lat: -6.2088, lng: 106.8456 },
+                "Manila": { lat: 14.5995, lng: 120.9842 },
+                "Bangalore": { lat: 12.9716, lng: 77.5946 },
+                "New Delhi": { lat: 28.6139, lng: 77.209 },
+                "Kathmandu": { lat: 27.7172, lng: 85.324 },
+                "Karachi": { lat: 24.8607, lng: 67.0011 },
+                "Colombo": { lat: 6.9271, lng: 79.8612 },
+                "Dubai": { lat: 25.2048, lng: 55.2708 },
+                "Riyadh": { lat: 24.7136, lng: 46.6753 },
+                "Tehran": { lat: 35.6892, lng: 51.389 },
+                "Jerusalem": { lat: 31.7683, lng: 35.2137 },
+                "Istanbul": { lat: 41.0082, lng: 28.9784 },
+                "Moscow": { lat: 55.7558, lng: 37.6173 },
+                "Paris": { lat: 48.8566, lng: 2.3522 },
+                "Berlin": { lat: 52.52, lng: 13.405 },
+                "Rome": { lat: 41.9028, lng: 12.4964 },
+                "Madrid": { lat: 40.4168, lng: -3.7038 },
+                "Amsterdam": { lat: 52.3676, lng: 4.9041 },
+                "Helsinki": { lat: 60.1699, lng: 24.9384 },
+                "Stockholm": { lat: 59.3293, lng: 18.0686 },
+                "Dublin": { lat: 53.3498, lng: -6.2603 },
+                "London": { lat: 51.5074, lng: -0.1278 },
+                "Lisbon": { lat: 38.7223, lng: -9.1393 },
+                "Reykjavik": { lat: 64.1466, lng: -21.9426 },
+                "Cairo": { lat: 30.0444, lng: 31.2357 },
+                "Johannesburg": { lat: -26.2041, lng: 28.0473 },
+                "Nairobi": { lat: -1.2921, lng: 36.8219 },
+                "Lagos": { lat: 6.5244, lng: 3.3792 },
+                "Casablanca": { lat: 33.5731, lng: -7.5898 },
+                "New York": { lat: 40.7128, lng: -74.006 },
+                "Atlanta": { lat: 33.749, lng: -84.388 },
+                "Miami": { lat: 25.7617, lng: -80.1918 },
+                "Toronto": { lat: 43.6532, lng: -79.3832 },
+                "Chicago": { lat: 41.8781, lng: -87.6298 },
+                "Houston": { lat: 29.7604, lng: -95.3698 },
+                "Mexico City": { lat: 19.4326, lng: -99.1332 },
+                "Denver": { lat: 39.7392, lng: -104.9903 },
+                "Phoenix": { lat: 33.4484, lng: -112.074 },
+                "Vancouver": { lat: 49.2827, lng: -123.1207 },
+                "Seattle": { lat: 47.6062, lng: -122.3321 },
+                "San Francisco": { lat: 37.7749, lng: -122.4194 },
+                "Los Angeles": { lat: 34.0522, lng: -118.2437 },
+                "Anchorage": { lat: 61.2181, lng: -149.9003 },
+                "Honolulu": { lat: 21.3069, lng: -157.8583 },
+                "Santiago": { lat: -33.4489, lng: -70.6693 },
+                "Bogota": { lat: 4.711, lng: -74.0721 },
+                "Caracas": { lat: 10.4806, lng: -66.9036 },
+                "Buenos Aires": { lat: -34.6037, lng: -58.3816 },
+                "Sao Paulo": { lat: -23.5505, lng: -46.6333 },
+                "Lima": { lat: -12.0464, lng: -77.0428 },
+                "Auckland": { lat: -36.8485, lng: 174.7633 },
+                "Fiji": { lat: -18.1248, lng: 178.4501 },
+                "Samoa": { lat: -13.85, lng: -171.75 },
+                "Tahiti": { lat: -17.6509, lng: -149.426 }
+            };
             
             // Available timezones for selection
             const availableTimezones = [
@@ -492,6 +576,16 @@
             const shareUrlButton = document.getElementById('share-url');
             const addCityButton = document.getElementById('add-city');
             const toast = document.getElementById('toast');
+            const globeContainer = document.getElementById('globe-container');
+
+            const globe = Globe()(globeContainer)
+                .pointLat('lat')
+                .pointLng('lng')
+                .pointColor('color')
+                .pointAltitude('size')
+                .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
+                .autoRotate(true)
+                .autoRotateSpeed(0.3);
             
             // Load state from localStorage if available
             loadStateFromLocalStorage();
@@ -928,6 +1022,8 @@
                 
                 // Update Discord text field
                 document.getElementById('discord-text').value = discordText;
+
+                updateGlobe();
             }
             
             // Function to check if a location is currently in DST
@@ -955,6 +1051,23 @@
                     console.error('Timezone offset error:', e);
                     return 0;
                 }
+            }
+
+            function updateGlobe() {
+                const points = selectedCities.map(city => {
+                    const coords = cityCoordinates[city.name];
+                    if (!coords) return null;
+                    return { lat: coords.lat, lng: coords.lng, name: city.name, size: 0.05, color: 'red' };
+                }).filter(Boolean);
+
+                globe
+                    .pointsData(points)
+                    .labelsData(points)
+                    .labelLat('lat')
+                    .labelLng('lng')
+                    .labelText('name')
+                    .labelSize(0.4)
+                    .labelColor(() => 'white');
             }
 
             function createTimeZoneDatalist() {
