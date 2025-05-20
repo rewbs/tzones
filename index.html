@@ -184,6 +184,14 @@
             font-size: 14px;
             color: var(--text-color);
         }
+        .map-section {
+            margin-top: 40px;
+            text-align: center;
+        }
+        #timezone-map {
+            width: 100%;
+            height: 250px;
+        }
         .time-controls {
             margin: 20px 0;
             padding: 15px;
@@ -359,6 +367,8 @@
             to {bottom: 0; opacity: 0;}
         }
     </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
 </head>
 <body>
     <div class="container">
@@ -405,7 +415,12 @@
             <textarea id="discord-text" rows="10" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace;" readonly></textarea>
             <button id="copy-discord" class="share-button" style="background-color: #7289DA;">Copy to Clipboard</button>
         </div>
-        
+
+        <div class="map-section">
+            <h2>Selected Time Zones</h2>
+            <svg id="timezone-map"></svg>
+        </div>
+
         <div class="footer">
             <p>Compare time zones around the world</p>
             <p>Last updated: <span id="current-date"></span></p>
@@ -538,8 +553,9 @@
             // Setup event listeners
             formatToggle.addEventListener('change', function() {
                 use24HourFormat = this.checked;
-                updateTimes();
-                updateUrlHash();
+                        updateTimes();
+                        highlightTimeZones();
+                        updateUrlHash();
             });
             
             timeSlider.addEventListener('input', function() {
@@ -563,8 +579,8 @@
             });
             
             // Setup add/remove city buttons
-            addCityButton.addEventListener('click', function() {
-                if (selectedCities.length < MAX_CITIES) {
+                addCityButton.addEventListener('click', function() {
+                    if (selectedCities.length < MAX_CITIES) {
                     // Find a timezone that isn't already selected
                     const usedTimezones = selectedCities.map(city => city.timezone);
                     const availableOption = availableTimezones.find(tz => !usedTimezones.includes(tz.timezone)) || availableTimezones[0];
@@ -576,21 +592,23 @@
                     });
                     
                     populateTimeZoneSelectors();
-                    updateTimes();
-                    updateUrlHash();
-                    updateCityButtons();
-                }
-            });
+                        updateTimes();
+                        highlightTimeZones();
+                        updateUrlHash();
+                        updateCityButtons();
+                    }
+                });
             
-            removeCityButton.addEventListener('click', function() {
-                if (selectedCities.length > MIN_CITIES) {
+                removeCityButton.addEventListener('click', function() {
+                    if (selectedCities.length > MIN_CITIES) {
                     selectedCities.pop();
                     populateTimeZoneSelectors();
-                    updateTimes();
-                    updateUrlHash();
-                    updateCityButtons();
-                }
-            });
+                        updateTimes();
+                        highlightTimeZones();
+                        updateUrlHash();
+                        updateCityButtons();
+                    }
+                });
             
             // Function to update add/remove buttons state
             function updateCityButtons() {
@@ -771,6 +789,7 @@
                                 timezone: match.dataset.timezone
                             };
                             updateTimes();
+                            highlightTimeZones();
                             updateUrlHash();
                         }
                     });
@@ -929,6 +948,9 @@
                 
                 // Update Discord text field
                 document.getElementById('discord-text').value = discordText;
+
+                // Update map highlighting
+                highlightTimeZones();
             }
             
             // Function to check if a location is currently in DST
@@ -987,14 +1009,79 @@
                         aliasOption.textContent = `${alias} - ${tz.name} (${tz.timezone} ${offsetStr})`;
                         aliasOption.dataset.timezone = tz.timezone;
                         aliasOption.dataset.name = tz.name;
-                        datalist.appendChild(aliasOption);
-                    });
+                    datalist.appendChild(aliasOption);
                 });
-            }
+            });
+        }
+
+        // Initialize the timezone map
+        let mapLoaded = false;
+        let mapSvg, mapHeight, mapProjection, mapPath;
+
+        function initTimeZoneMap() {
+            mapSvg = d3.select('#timezone-map');
+            mapHeight = parseInt(mapSvg.style('height'));
+            const width = mapSvg.node().getBoundingClientRect().width;
+
+            mapProjection = d3.geoNaturalEarth1()
+                .scale(width / 6)
+                .translate([width / 2, mapHeight / 2]);
+            mapPath = d3.geoPath(mapProjection);
+
+            Promise.all([
+                d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+            ]).then(([world]) => {
+                const countries = topojson.feature(world, world.objects.countries);
+
+                mapSvg.append('g')
+                    .selectAll('path')
+                    .data(countries.features)
+                    .enter()
+                    .append('path')
+                    .attr('d', mapPath)
+                    .attr('fill', '#e0e0e0')
+                    .attr('stroke', '#999')
+                    .attr('stroke-width', 0.5);
+
+                const offsets = d3.range(-12, 15);
+                mapSvg.append('g')
+                    .attr('id', 'tz-strips')
+                    .selectAll('rect')
+                    .data(offsets)
+                    .enter()
+                    .append('rect')
+                    .attr('x', d => mapProjection([d * 15, 0])[0])
+                    .attr('width', d => mapProjection([(d + 1) * 15, 0])[0] - mapProjection([d * 15, 0])[0])
+                    .attr('y', 0)
+                    .attr('height', mapHeight)
+                    .attr('fill', '#4CAF50')
+                    .attr('opacity', 0)
+                    .attr('class', d => `offset-${d}`);
+
+                mapLoaded = true;
+                highlightTimeZones();
+            });
+        }
+
+        function highlightTimeZones() {
+            if (!mapLoaded) return;
+            mapSvg.selectAll('#tz-strips rect').attr('opacity', 0);
+
+            const referenceTime = new Date(Date.now() + timeOffsetMinutes * 60000);
+            const offsets = Array.from(new Set(selectedCities.map(c => {
+                const offMin = -getTimezoneOffset(referenceTime, c.timezone);
+                return Math.round(offMin / 60);
+            })));
+
+            offsets.forEach(off => {
+                mapSvg.select(`#tz-strips .offset-${off}`).attr('opacity', 0.3);
+            });
+        }
             
             // Initialize the page
             createTimeZoneDatalist();
             populateTimeZoneSelectors();
+            initTimeZoneMap();
             updateTimes();
             saveStateToLocalStorage();
             
