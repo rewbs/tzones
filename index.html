@@ -48,7 +48,7 @@
             }
         }
         .city-time {
-            padding: 20px;
+            padding: 40px 20px 20px;
             border-radius: 8px;
             text-align: center;
             position: relative;
@@ -109,31 +109,7 @@
             display: inline-block;
             vertical-align: middle;
         }
-        .settings {
-            margin-top: 30px;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
         }
-        .settings h2 {
-            margin-top: 0;
-            color: var(--primary-color);
-            font-size: 18px;
-        }
-        .timezone-selector {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-top: 10px;
-        }
-        @media (max-width: 600px) {
-            .timezone-selector {
-                grid-template-columns: 1fr;
-            }
-        }
-        .timezone-selector select,
-        .timezone-selector input {
-            padding: 8px;
             border-radius: 4px;
             border: 1px solid #ccc;
             width: 100%;
@@ -144,7 +120,7 @@
             gap: 15px;
             margin-top: 20px;
         }
-        .add-city-btn, .remove-city-btn {
+        .add-city-btn {
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
@@ -160,17 +136,6 @@
         }
         .add-city-btn:disabled {
             background-color: #a5d6a7;
-            cursor: not-allowed;
-        }
-        .remove-city-btn {
-            background-color: #f44336;
-            color: white;
-        }
-        .remove-city-btn:hover {
-            background-color: #d32f2f;
-        }
-        .remove-city-btn:disabled {
-            background-color: #ef9a9a;
             cursor: not-allowed;
         }
         .dst-indicator {
@@ -304,6 +269,20 @@
             right: 10px;
             font-size: 24px;
         }
+        .city-buttons {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        .city-buttons button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: inherit;
+            font-size: 14px;
+        }
         /* Adjusted time indicator */
         .adjusted-time {
             position: relative;
@@ -393,17 +372,9 @@
             <!-- This will be filled by JavaScript -->
         </div>
         
-        <div class="settings">
-            <h2>Customize Time Zones</h2>
-            <div class="timezone-selector" id="timezone-selector">
-                <!-- This will be filled by JavaScript -->
-            </div>
-            <div class="city-controls">
-                <button id="add-city" class="add-city-btn">+ Add City</button>
-                <button id="remove-city" class="remove-city-btn">- Remove City</button>
-            </div>
+        <div class="city-controls">
+            <button id="add-city" class="add-city-btn">+ Add City</button>
         </div>
-        
         <div class="discord-section">
             <h2>Discord Snippet</h2>
             <textarea id="discord-text" rows="10" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace;" readonly></textarea>
@@ -507,6 +478,7 @@
             let selectedCities = [...defaultCities];
             let use24HourFormat = false;
             let timeOffsetMinutes = 0;
+            let isEditing = false;
             
             // Constants for min/max cities
             const MIN_CITIES = 2;
@@ -519,7 +491,6 @@
             const resetTimeButton = document.getElementById('reset-time');
             const shareUrlButton = document.getElementById('share-url');
             const addCityButton = document.getElementById('add-city');
-            const removeCityButton = document.getElementById('remove-city');
             const toast = document.getElementById('toast');
             
             // Load state from localStorage if available
@@ -579,27 +550,14 @@
                         timezone: availableOption.timezone
                     });
                     
-                    populateTimeZoneSelectors();
                     updateTimes();
                     updateUrlHash();
                     updateCityButtons();
                 }
             });
             
-            removeCityButton.addEventListener('click', function() {
-                if (selectedCities.length > MIN_CITIES) {
-                    selectedCities.pop();
-                    populateTimeZoneSelectors();
-                    updateTimes();
-                    updateUrlHash();
-                    updateCityButtons();
-                }
-            });
-            
-            // Function to update add/remove buttons state
             function updateCityButtons() {
                 addCityButton.disabled = selectedCities.length >= MAX_CITIES;
-                removeCityButton.disabled = selectedCities.length <= MIN_CITIES;
             }
             
             // Function to load state from localStorage
@@ -748,42 +706,6 @@
                     timeOffsetDisplay.textContent = displayText;
                 }
             }
-            
-            // Function to populate the timezone selector dropdowns
-            function populateTimeZoneSelectors() {
-                const selectorContainer = document.getElementById('timezone-selector');
-                selectorContainer.innerHTML = '';
-
-                selectedCities.forEach((city, index) => {
-                    const selectorDiv = document.createElement('div');
-
-                    const input = document.createElement('input');
-                    input.setAttribute('list', 'timezone-options');
-                    input.className = 'timezone-input';
-                    input.id = `city-selector-${index}`;
-                    input.dataset.index = index;
-                    input.value = city.name;
-
-                    input.addEventListener('change', function() {
-                        const selectedIndex = parseInt(this.dataset.index);
-                        const options = Array.from(document.getElementById('timezone-options').options);
-                        const match = options.find(o => o.value === this.value);
-                        if (match) {
-                            selectedCities[selectedIndex] = {
-                                id: selectedCities[selectedIndex].id,
-                                name: match.dataset.name || match.value,
-                                timezone: match.dataset.timezone
-                            };
-                            updateTimes();
-                            updateUrlHash();
-                        }
-                    });
-
-                    selectorDiv.appendChild(input);
-                    selectorContainer.appendChild(selectorDiv);
-                });
-            }
-            
             // Function to determine day or night based on hour
             function getDayNightClass(hour) {
                 if (hour >= 6 && hour < 8) return 'dawn';
@@ -876,7 +798,7 @@
                 const utcDateString = adjustedTime.toLocaleDateString('en-US', utcDateOptions);
                 discordText += `UTC: ${utcDateString} ${utcTimeString}\n\n`;
                 
-                selectedCities.forEach(city => {
+                selectedCities.forEach((city, index) => {
                     const cityBox = document.createElement('div');
                     cityBox.className = 'city-time';
                     
@@ -949,7 +871,55 @@
                         </div>
                         ${isDST ? '<div class="dst-indicator">Daylight Saving Time</div>' : ''}
                     `;
-                    
+
+                    const buttons = document.createElement('div');
+                    buttons.className = 'city-buttons';
+
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = '✎';
+                    editBtn.title = 'Edit';
+                    editBtn.addEventListener('click', () => {
+                        isEditing = true;
+                        const input = document.createElement('input');
+                        input.setAttribute('list', 'timezone-options');
+                        input.className = 'timezone-input';
+                        input.value = city.name;
+                        cityBox.appendChild(input);
+                        input.focus();
+                        input.addEventListener('change', () => {
+                            const options = Array.from(document.getElementById('timezone-options').options);
+                            const match = options.find(o => o.value === input.value);
+                            if (match) {
+                                selectedCities[index] = {
+                                    id: city.id,
+                                    name: match.dataset.name || match.value,
+                                    timezone: match.dataset.timezone
+                                };
+                                updateTimes();
+                                updateUrlHash();
+                            }
+                            input.remove();
+                            isEditing = false;
+                        });
+                        input.addEventListener('blur', () => { input.remove(); isEditing = false; });
+                    });
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = '✖';
+                    deleteBtn.title = 'Delete';
+                    deleteBtn.addEventListener('click', () => {
+                        if (selectedCities.length > MIN_CITIES) {
+                            selectedCities.splice(index, 1);
+                            updateTimes();
+                            updateUrlHash();
+                            updateCityButtons();
+                        }
+                    });
+
+                    buttons.appendChild(editBtn);
+                    buttons.appendChild(deleteBtn);
+                    cityBox.appendChild(buttons);
+
                     timeDisplay.appendChild(cityBox);
                 });
                 
@@ -1023,13 +993,12 @@
             
             // Initialize the page
             createTimeZoneDatalist();
-            populateTimeZoneSelectors();
             updateTimes();
             saveStateToLocalStorage();
             
             // Update times every second
             setInterval(function() {
-                if (timeOffsetMinutes === 0) {
+                if (timeOffsetMinutes === 0 && !isEditing) {
                     updateTimes();
                 }
             }, 1000);
