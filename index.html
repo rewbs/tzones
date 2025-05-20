@@ -508,7 +508,9 @@
             const removeCityButton = document.getElementById('remove-city');
             const toast = document.getElementById('toast');
             
-            // Load state from URL hash if present
+            // Load state from localStorage if available
+            loadStateFromLocalStorage();
+            // Load state from URL hash if present (overrides localStorage)
             loadStateFromHash();
             
             // Initialize UI based on state
@@ -586,6 +588,62 @@
                 removeCityButton.disabled = selectedCities.length <= MIN_CITIES;
             }
             
+            // Function to load state from localStorage
+            function loadStateFromLocalStorage() {
+                try {
+                    const stored = localStorage.getItem('tzonesState');
+                    if (stored) {
+                        const data = JSON.parse(stored);
+                        if (data.cities && Array.isArray(data.cities)) {
+                            const numCities = Math.min(Math.max(data.cities.length, MIN_CITIES), MAX_CITIES);
+                            selectedCities = [];
+                            for (let i = 0; i < numCities; i++) {
+                                if (i < data.cities.length) {
+                                    selectedCities.push({
+                                        id: i + 1,
+                                        name: data.cities[i].name || defaultCities[i % defaultCities.length].name,
+                                        timezone: data.cities[i].timezone || defaultCities[i % defaultCities.length].timezone
+                                    });
+                                } else {
+                                    selectedCities.push({
+                                        id: i + 1,
+                                        name: defaultCities[i % defaultCities.length].name,
+                                        timezone: defaultCities[i % defaultCities.length].timezone
+                                    });
+                                }
+                            }
+                        }
+
+                        if (typeof data.format24h === 'boolean') {
+                            use24HourFormat = data.format24h;
+                        }
+
+                        if (typeof data.offset === 'number') {
+                            timeOffsetMinutes = data.offset;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to parse localStorage:', e);
+                }
+            }
+
+            // Function to save state to localStorage
+            function saveStateToLocalStorage() {
+                const stateData = {
+                    cities: selectedCities.map(city => ({
+                        name: city.name,
+                        timezone: city.timezone
+                    })),
+                    format24h: use24HourFormat,
+                    offset: timeOffsetMinutes
+                };
+                try {
+                    localStorage.setItem('tzonesState', JSON.stringify(stateData));
+                } catch (e) {
+                    console.error('Failed to save state:', e);
+                }
+            }
+
             // Function to load state from URL hash
             function loadStateFromHash() {
                 if (window.location.hash) {
@@ -637,8 +695,9 @@
                     format24h: use24HourFormat,
                     offset: timeOffsetMinutes
                 };
-                
+
                 window.location.hash = encodeURIComponent(JSON.stringify(stateData));
+                saveStateToLocalStorage();
             }
             
             // Function to copy URL to clipboard
@@ -927,6 +986,7 @@
             createTimeZoneDatalist();
             populateTimeZoneSelectors();
             updateTimes();
+            saveStateToLocalStorage();
             
             // Update times every second
             setInterval(function() {
