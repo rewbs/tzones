@@ -5,23 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Time Zone Comparison</title>
     <style>
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap");
+        :root {
+            --primary-color: #3f51b5;
+            --accent-color: #4CAF50;
+            --background-color: #f7f9fc;
+            --text-color: #333;
+            --card-background: #fff;
+        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
-            color: #333;
+            background-color: var(--background-color);
+            line-height: 1.6;
+            letter-spacing: 0.2px;
+            color: var(--text-color);
             transition: background-color 0.3s ease;
         }
         .container {
-            background-color: #fff;
-            border-radius: 10px;
+            background-color: var(--card-background);
+            border-radius: 12px;
             padding: 30px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
         }
         h1 {
-            color: #0066cc;
+            color: var(--primary-color);
             text-align: center;
             margin-bottom: 30px;
         }
@@ -38,25 +48,25 @@
         }
         .city-time {
             padding: 20px;
-            border-radius: 5px;
+            border-radius: 8px;
             text-align: center;
             position: relative;
             overflow: hidden;
-            border-left: 5px solid #0066cc;
+            border-left: 5px solid var(--primary-color);
             transition: all 0.3s ease;
         }
         .daytime {
-            background-color: #e6f3ff;
-            color: #333;
+            background-color: #eef6ff;
+            color: var(--text-color);
         }
         .night {
             background-color: #1a1a2e;
             color: #f0f0f0;
-            border-left-color: #4d4dff;
+            border-left-color: #5c6bc0;
         }
         .dawn, .dusk {
-            background: linear-gradient(135deg, #1a1a2e 0%, #e6f3ff 100%);
-            color: #333;
+            background: linear-gradient(135deg, #1a1a2e 0%, #eef6ff 100%);
+            color: var(--text-color);
         }
         .dawn .city-date, .dusk .city-date {
             color: #000;
@@ -70,7 +80,7 @@
             color: #fff;
         }
         .night .city-name {
-            color: #6699ff;
+            color: #8fa6ff;
         }
         .night .city-date {
             color: #cccccc;
@@ -79,17 +89,17 @@
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 8px;
-            color: #0066cc;
+            color: var(--primary-color);
         }
         .city-date {
             font-size: 14px;
-            color: #666;
+            color: var(--text-color);
             margin-bottom: 10px;
         }
         .city-time-value {
             font-size: 32px;
             font-weight: bold;
-            color: #333;
+            color: var(--text-color);
         }
         .time-icon {
             font-size: 24px;
@@ -99,11 +109,11 @@
             margin-top: 30px;
             padding: 20px;
             background-color: #f9f9f9;
-            border-radius: 5px;
+            border-radius: 8px;
         }
         .settings h2 {
             margin-top: 0;
-            color: #0066cc;
+            color: var(--primary-color);
             font-size: 18px;
         }
         .timezone-selector {
@@ -138,11 +148,11 @@
             border: none;
         }
         .add-city-btn {
-            background-color: #4CAF50;
+            background-color: var(--accent-color);
             color: white;
         }
         .add-city-btn:hover {
-            background-color: #45a049;
+            background-color: #3e9341;
         }
         .add-city-btn:disabled {
             background-color: #a5d6a7;
@@ -172,14 +182,14 @@
             margin-top: 40px;
             text-align: center;
             font-size: 14px;
-            color: #666;
+            color: var(--text-color);
         }
         .time-controls {
             margin: 20px 0;
             padding: 15px;
-            background-color: #f0f8ff;
-            border-radius: 5px;
-            border-left: 5px solid #0066cc;
+            background-color: #e9eef8;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-color);
         }
         .time-format-toggle {
             display: flex;
@@ -223,10 +233,10 @@
             border-radius: 50%;
         }
         input:checked + .slider {
-            background-color: #0066cc;
+            background-color: var(--primary-color);
         }
         input:focus + .slider {
-            box-shadow: 0 0 1px #0066cc;
+            box-shadow: 0 0 1px var(--primary-color);
         }
         input:checked + .slider:before {
             transform: translateX(26px);
@@ -247,11 +257,11 @@
             text-align: center;
             margin-top: 10px;
             font-weight: bold;
-            color: #0066cc;
+            color: var(--primary-color);
         }
         /* Reset button */
         .reset-button {
-            background-color: #0066cc;
+            background-color: var(--primary-color);
             color: white;
             border: none;
             padding: 8px 16px;
@@ -262,7 +272,7 @@
             margin: 10px auto 0;
         }
         .reset-button:hover:not(:disabled) {
-            background-color: #0055aa;
+            background-color: #354497;
         }
         .reset-button:disabled {
             background-color: #b3d9ff;
@@ -274,7 +284,7 @@
             color: white;
             text-align: center;
             padding: 5px;
-            border-radius: 5px;
+            border-radius: 8px;
             margin-top: 10px;
             font-weight: bold;
             transition: opacity 0.3s ease;
@@ -303,12 +313,12 @@
             bottom: 0;
             background-color: rgba(255, 152, 0, 0.1);
             border: 2px solid #ff9800;
-            border-radius: 5px;
+            border-radius: 8px;
             pointer-events: none;
         }
         /* Share URL button */
         .share-button {
-            background-color: #4CAF50;
+            background-color: var(--accent-color);
             color: white;
             border: none;
             padding: 8px 16px;
@@ -319,14 +329,14 @@
             margin: 10px auto;
         }
         .share-button:hover {
-            background-color: #45a049;
+            background-color: #3e9341;
         }
         /* Toast notification for URL copied */
         .toast {
             visibility: hidden;
             min-width: 250px;
             margin-left: -125px;
-            background-color: #333;
+            background-color: var(--text-color);
             color: #fff;
             text-align: center;
             border-radius: 2px;
@@ -392,7 +402,7 @@
         
         <div class="discord-section">
             <h2>Discord Snippet</h2>
-            <textarea id="discord-text" rows="10" style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: monospace;" readonly></textarea>
+            <textarea id="discord-text" rows="10" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace;" readonly></textarea>
             <button id="copy-discord" class="share-button" style="background-color: #7289DA;">Copy to Clipboard</button>
         </div>
         
