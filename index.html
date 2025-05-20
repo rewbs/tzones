@@ -101,9 +101,12 @@
             font-weight: bold;
             color: var(--text-color);
         }
-        .time-icon {
-            font-size: 24px;
+        .analog-clock {
+            width: 32px;
+            height: 32px;
             margin-right: 10px;
+            display: inline-block;
+            vertical-align: middle;
         }
         .settings {
             margin-top: 30px;
@@ -795,6 +798,34 @@
                 if (hour >= 18 && hour < 20) return '🌇'; // sunset
                 return '🌙'; // moon
             }
+
+            // Generate an SVG analog clock for a given Date object
+            function generateAnalogClockSvg(date) {
+                const hours = date.getHours() % 12;
+                const minutes = date.getMinutes();
+                const seconds = date.getSeconds();
+
+                const hourAngle = (hours + minutes / 60) * 30;
+                const minuteAngle = (minutes + seconds / 60) * 6;
+                const secondAngle = seconds * 6;
+
+                function hand(length, angle, width, color) {
+                    const rad = angle * Math.PI / 180;
+                    const x = 50 + length * Math.sin(rad);
+                    const y = 50 - length * Math.cos(rad);
+                    return `<line x1="50" y1="50" x2="${x}" y2="${y}" stroke="${color}" stroke-width="${width}" stroke-linecap="round" />`;
+                }
+
+                return `
+                    <svg viewBox="0 0 100 100" width="32" height="32">
+                        <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" stroke-width="4" />
+                        ${hand(25, hourAngle, 4, 'currentColor')}
+                        ${hand(35, minuteAngle, 2, 'currentColor')}
+                        ${hand(40, secondAngle, 1, 'red')}
+                        <circle cx="50" cy="50" r="2" fill="currentColor" />
+                    </svg>
+                `;
+            }
             
             // Function to update all times
             function updateTimes() {
@@ -865,13 +896,13 @@
                         options.second = '2-digit';
                     }
                     
-                    let timeString, dateString, localHour;
+                    let timeString, dateString, localHour, localDate;
                     
                     try {
                         timeString = adjustedTime.toLocaleTimeString('en-US', options);
-                        
+
                         // Get date for this timezone
-                        const dateOptions = { 
+                        const dateOptions = {
                             timeZone: city.timezone,
                             weekday: 'long',
                             year: 'numeric',
@@ -879,14 +910,10 @@
                             day: 'numeric'
                         };
                         dateString = adjustedTime.toLocaleDateString('en-US', dateOptions);
-                        
-                        // Get the hour in the local timezone to determine day/night
-                        const hourOptions = {
-                            timeZone: city.timezone,
-                            hour: 'numeric',
-                            hour12: false
-                        };
-                        localHour = parseInt(adjustedTime.toLocaleString('en-US', hourOptions).split(':')[0]);
+
+                        // Create local date object for calculations
+                        localDate = new Date(adjustedTime.toLocaleString('en-US', { timeZone: city.timezone }));
+                        localHour = localDate.getHours();
                         
                         // Add to Discord text
                         discordText += `${city.name}: ${dateString} ${timeString}\n`;
@@ -895,6 +922,7 @@
                         timeString = 'Invalid timezone';
                         dateString = 'Error';
                         localHour = 12;
+                        localDate = new Date();
                         
                         // Add error to Discord text
                         discordText += `${city.name}: Invalid timezone\n`;
@@ -916,7 +944,7 @@
                         <div class="city-name">${city.name} (${city.timezone}, ${offsetStr})</div>
                         <div class="city-date">${dateString}</div>
                         <div class="city-time-value">
-                            <span class="time-icon">🕒</span>${timeString}
+                            <span class="analog-clock">${generateAnalogClockSvg(localDate)}</span>${timeString}
                         </div>
                         ${isDST ? '<div class="dst-indicator">Daylight Saving Time</div>' : ''}
                     `;
