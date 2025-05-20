@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Global Time Zone Comparison</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <style>
         @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap");
         :root {
@@ -36,17 +37,9 @@
             text-align: center;
             margin-bottom: 30px;
         }
-        .time-display {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        @media (max-width: 600px) {
-            .time-display {
-                grid-template-columns: 1fr;
-            }
-        }
+          .time-display {
+              margin-bottom: 30px;
+          }
         .city-time {
             padding: 40px 20px 20px;
             border-radius: 8px;
@@ -109,7 +102,7 @@
             display: inline-block;
             vertical-align: middle;
         }
-        }
+        .timezone-input {
             border-radius: 4px;
             border: 1px solid #ccc;
             width: 100%;
@@ -119,24 +112,6 @@
             justify-content: center;
             gap: 15px;
             margin-top: 20px;
-        }
-        .add-city-btn {
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            border: none;
-        }
-        .add-city-btn {
-            background-color: var(--accent-color);
-            color: white;
-        }
-        .add-city-btn:hover {
-            background-color: #3e9341;
-        }
-        .add-city-btn:disabled {
-            background-color: #a5d6a7;
-            cursor: not-allowed;
         }
         .dst-indicator {
             font-size: 12px;
@@ -166,50 +141,6 @@
             justify-content: center;
             margin-bottom: 15px;
         }
-        /* Toggle switch styling */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-            margin: 0 10px;
-        }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: var(--primary-color);
-        }
-        input:focus + .slider {
-            box-shadow: 0 0 1px var(--primary-color);
-        }
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
         /* Time adjustment slider */
         .time-adjustment {
             margin-top: 20px;
@@ -227,47 +158,6 @@
             margin-top: 10px;
             font-weight: bold;
             color: var(--primary-color);
-        }
-        /* Reset button */
-        .reset-button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            display: block;
-            margin: 10px auto 0;
-        }
-        .reset-button:hover:not(:disabled) {
-            background-color: #354497;
-        }
-        .reset-button:disabled {
-            background-color: #b3d9ff;
-            cursor: not-allowed;
-        }
-        /* Time offset indicator */
-        .time-offset-indicator {
-            background-color: #ff9800;
-            color: white;
-            text-align: center;
-            padding: 5px;
-            border-radius: 8px;
-            margin-top: 10px;
-            font-weight: bold;
-            transition: opacity 0.3s ease;
-            opacity: 0;
-        }
-        .time-offset-indicator.active {
-            opacity: 1;
-        }
-        /* Day/night indicator */
-        .day-night-icon {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 24px;
         }
         .city-buttons {
             position: absolute;
@@ -299,95 +189,61 @@
             border-radius: 8px;
             pointer-events: none;
         }
-        /* Share URL button */
-        .share-button {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            display: block;
-            margin: 10px auto;
-        }
-        .share-button:hover {
-            background-color: #3e9341;
-        }
-        /* Toast notification for URL copied */
-        .toast {
-            visibility: hidden;
-            min-width: 250px;
-            margin-left: -125px;
-            background-color: var(--text-color);
-            color: #fff;
-            text-align: center;
-            border-radius: 2px;
-            padding: 16px;
-            position: fixed;
-            z-index: 1;
-            left: 50%;
-            bottom: 30px;
-        }
-        .toast.show {
-            visibility: visible;
-            animation: fadein 0.5s, fadeout 0.5s 2.5s;
-        }
-        @keyframes fadein {
-            from {bottom: 0; opacity: 0;} 
-            to {bottom: 30px; opacity: 1;}
-        }
-        @keyframes fadeout {
-            from {bottom: 30px; opacity: 1;} 
-            to {bottom: 0; opacity: 0;}
-        }
-    </style>
+</style>
 </head>
-<body>
+<body class="grey lighten-4">
     <div class="container">
         <h1>Global Time Zone Comparison</h1>
-        
-        <div class="time-controls">
-            <div class="time-format-toggle">
-                <span>12-hour</span>
-                <label class="switch">
-                    <input type="checkbox" id="format-toggle">
-                    <span class="slider"></span>
-                </label>
-                <span>24-hour</span>
-            </div>
-            
-            <div class="time-adjustment">
-                <div class="time-slider-container">
-                    <input type="range" min="-48" max="48" value="0" class="time-slider" id="time-slider">
-                    <div class="time-offset-display" id="time-offset-display">Current Time</div>
+
+        <div class="card-panel">
+            <div class="time-format-toggle center-align">
+                <div class="switch">
+                    <label>
+                        12-hour
+                        <input type="checkbox" id="format-toggle">
+                        <span class="lever"></span>
+                        24-hour
+                    </label>
                 </div>
-                <button id="reset-time" class="reset-button">Reset to Current Time</button>
             </div>
-            
-            <button id="share-url" class="share-button">Share URL</button>
+            <div class="time-adjustment">
+                <div class="range-field">
+                    <input type="range" min="-48" max="48" value="0" id="time-slider">
+                </div>
+                <div class="time-offset-display" id="time-offset-display">Current Time</div>
+                <button id="reset-time" class="btn waves-effect waves-light">Reset to Current Time</button>
+            </div>
+            <div class="center-align">
+                <button id="share-url" class="btn waves-effect waves-light">Share URL</button>
+            </div>
         </div>
-        
-        <div class="time-display" id="time-display">
+
+        <div class="row time-display" id="time-display">
             <!-- This will be filled by JavaScript -->
         </div>
-        
-        <div class="city-controls">
-            <button id="add-city" class="add-city-btn">+ Add City</button>
+
+        <div class="center-align city-controls">
+            <button id="add-city" class="btn green">+ Add City</button>
         </div>
-        <div class="discord-section">
-            <h2>Discord Snippet</h2>
-            <textarea id="discord-text" rows="10" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace;" readonly></textarea>
-            <button id="copy-discord" class="share-button" style="background-color: #7289DA;">Copy to Clipboard</button>
+
+        <div class="card discord-section">
+            <div class="card-content">
+                <h5>Discord Snippet</h5>
+                <div class="input-field">
+                    <textarea id="discord-text" class="materialize-textarea" rows="10" readonly></textarea>
+                </div>
+                <div class="center-align">
+                    <button id="copy-discord" class="btn indigo">Copy to Clipboard</button>
+                </div>
+            </div>
         </div>
-        
-        <div class="footer">
+
+        <div class="footer center-align">
             <p>Compare time zones around the world</p>
             <p>Last updated: <span id="current-date"></span></p>
         </div>
     </div>
     
-    <div id="toast" class="toast">URL copied to clipboard!</div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -491,8 +347,7 @@
             const resetTimeButton = document.getElementById('reset-time');
             const shareUrlButton = document.getElementById('share-url');
             const addCityButton = document.getElementById('add-city');
-            const toast = document.getElementById('toast');
-            
+            const copyDiscordButton = document.getElementById("copy-discord");
             // Load state from localStorage if available
             loadStateFromLocalStorage();
             // Load state from URL hash if present (overrides localStorage)
@@ -554,6 +409,14 @@
                     updateUrlHash();
                     updateCityButtons();
                 }
+            });
+            shareUrlButton.addEventListener("click", function() {
+                copyToClipboard(window.location.href);
+                showToast("URL copied to clipboard!");
+            });
+            copyDiscordButton.addEventListener("click", function() {
+                copyToClipboard(document.getElementById("discord-text").value);
+                showToast("Discord snippet copied!");
             });
             
             function updateCityButtons() {
@@ -681,9 +544,7 @@
             
             // Function to show toast notification
             function showToast(message) {
-                toast.textContent = message;
-                toast.className = "toast show";
-                setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+                M.toast({html: message});
             }
             
             // Function to update offset display
@@ -799,11 +660,12 @@
                 discordText += `UTC: ${utcDateString} ${utcTimeString}\n\n`;
                 
                 selectedCities.forEach((city, index) => {
-                    const cityBox = document.createElement('div');
-                    cityBox.className = 'city-time';
-                    
+                    const col = document.createElement("div");
+                    col.className = "col s12 m6";
+                    const cityBox = document.createElement("div");
+                    cityBox.className = "card-panel city-time";
                     if (isAdjusted) {
-                        cityBox.classList.add('adjusted-time');
+                        cityBox.classList.add("adjusted-time");
                     }
                     
                     // Format the time for this timezone
@@ -920,8 +782,8 @@
                     buttons.appendChild(deleteBtn);
                     cityBox.appendChild(buttons);
 
-                    timeDisplay.appendChild(cityBox);
-                });
+                    col.appendChild(cityBox);
+                    timeDisplay.appendChild(col);
                 
                 // Finish Discord text
                 discordText += "```";
@@ -1004,5 +866,6 @@
             }, 1000);
         });
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
 </html>
