@@ -9,12 +9,14 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { format, addMinutes, differenceInMinutes, startOfDay } from "date-fns"
-import { CalendarIcon, RotateCcw } from "lucide-react"
+import { CalendarIcon, RotateCcw, Share2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { TimezoneCombobox } from "./timezone-combobox"
+import { SharePopover } from "./share-popover"
 
 export function TimeControls() {
     const {
+        cities,
         offsetMinutes, setOffsetMinutes,
         currentTime, realTime,
         use24Hour, setUse24Hour,
@@ -140,6 +142,17 @@ export function TimeControls() {
                         <Button variant="outline" size="icon" onClick={resetTime} disabled={offsetMinutes === 0} title="Reset to Now">
                             <RotateCcw className="h-4 w-4" />
                         </Button>
+
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" size="icon" title="Share">
+                                    <Share2 className="h-4 w-4" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80" align="start">
+                                <SharePopover date={currentTime || new Date()} cities={cities} />
+                            </PopoverContent>
+                        </Popover>
 
                         <div className="flex items-center gap-2 ml-2">
                             <Label className="text-xs text-slate-500 hidden md:block">Your Location:</Label>

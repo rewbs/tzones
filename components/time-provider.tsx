@@ -45,13 +45,49 @@ export function TimeProvider({ children }: { children: React.ReactNode }) {
     const [userTimezone, setUserTimezone] = useState("UTC")
     const [realTime, setRealTime] = useState(new Date())
 
-    // Initialize user timezone
+    // Initialize user timezone and load state
     useEffect(() => {
         try {
             const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
             setUserTimezone(tz)
         } catch (e) {
             console.warn("Could not detect timezone", e)
+        }
+
+        // Check URL params first
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search)
+            const tParam = params.get("t")
+            const cParam = params.get("c")
+
+            if (tParam || cParam) {
+                // Load from URL
+                if (cParam) {
+                    try {
+                        const citiesMin = JSON.parse(cParam)
+                        const loadedCities = citiesMin.map((c: any, i: number) => ({
+                            id: String(i + 1),
+                            name: c.n,
+                            timezone: c.z
+                        }))
+                        setCities(loadedCities)
+                    } catch (e) {
+                        console.error("Failed to parse cities from URL", e)
+                    }
+                }
+
+                if (tParam) {
+                    try {
+                        const targetTime = parseInt(tParam)
+                        const now = new Date().getTime()
+                        const diffMinutes = Math.round((targetTime - now) / 60000)
+                        setOffsetMinutes(diffMinutes)
+                    } catch (e) {
+                        console.error("Failed to parse time from URL", e)
+                    }
+                }
+                return // Skip localStorage if URL params exist
+            }
         }
 
         // Load state from localStorage
@@ -62,9 +98,6 @@ export function TimeProvider({ children }: { children: React.ReactNode }) {
                 if (parsed.cities) setCities(parsed.cities)
                 if (parsed.use24Hour !== undefined) setUse24Hour(parsed.use24Hour)
                 if (parsed.userTimezone) setUserTimezone(parsed.userTimezone)
-                // We don't restore offset, usually better to start at "Now" or maybe we should?
-                // The original app didn't restore offset on reload unless in URL hash.
-                // Let's stick to 0 for now.
             } catch (e) {
                 console.error("Failed to load state", e)
             }

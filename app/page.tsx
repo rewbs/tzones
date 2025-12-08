@@ -2,6 +2,7 @@ import Image from "next/image";
 import { TimeControls } from "@/components/time-controls";
 import { CityList } from "@/components/city-list";
 import { Timeline } from "@/components/timeline";
+import { DiscordWidget } from "@/components/discord-widget";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       <TimeControls />
       <CityList />
       <Timeline />
+      <DiscordWidget />
     </main>
   );
 }
