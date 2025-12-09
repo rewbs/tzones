@@ -41,9 +41,10 @@ interface TimezoneComboboxProps {
     onValueChange: (value: string) => void
     placeholder?: string
     className?: string
+    disabled?: boolean
 }
 
-export function TimezoneCombobox({ value, onValueChange, placeholder = "Select timezone...", className }: TimezoneComboboxProps) {
+export function TimezoneCombobox({ value, onValueChange, placeholder = "Select timezone...", className, disabled }: TimezoneComboboxProps) {
     const [open, setOpen] = React.useState(false)
 
     return (
@@ -54,6 +55,7 @@ export function TimezoneCombobox({ value, onValueChange, placeholder = "Select t
                     role="combobox"
                     aria-expanded={open}
                     className={cn("justify-between", className)}
+                    disabled={disabled}
                 >
                     {value || placeholder}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

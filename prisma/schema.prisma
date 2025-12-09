@@ -1,0 +1,36 @@
+generator client {
+  provider   = "prisma-client"
+  output     = "./generated"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Meeting {
+  id           String        @id
+  title        String
+  passwordHash String?
+  createdAt    DateTime      @default(now())
+  expiresAt    DateTime?
+  participants Participant[]
+}
+
+model Participant {
+  id           String         @id @default(uuid())
+  meetingId    String
+  name         String
+  timezone     String
+  createdAt    DateTime       @default(now())
+  meeting      Meeting        @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  availability Availability[]
+}
+
+model Availability {
+  id            String      @id @default(uuid())
+  participantId String
+  startTime     DateTime
+  endTime       DateTime
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+}

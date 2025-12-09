@@ -47,3 +47,6 @@ next-env.d.ts
 .idea
 *.swp
 *.swo
+
+/lib/generated/prisma
+/prisma/generated

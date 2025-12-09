@@ -95,14 +95,14 @@ export function TimeControls() {
         tickmarks.push(
             <div
                 key={i}
-                className="absolute top-2 w-0.5 h-2 bg-slate-700"
+                className="absolute top-2 w-0.5 h-2 bg-border"
                 style={{ left: `${percent}%` }}
             />
         )
     }
 
     return (
-        <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-xl p-6 shadow-xl">
+        <div className="bg-card/50 backdrop-blur-md border border-border rounded-xl p-6 shadow-xl">
             <div className="flex flex-col gap-6">
                 {/* Top Row: Date, Reset, Timezone, Format */}
                 <div className="flex flex-wrap gap-4 items-center justify-between">
@@ -112,7 +112,7 @@ export function TimeControls() {
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                        "w-[240px] justify-start text-left font-normal bg-slate-950/50 border-slate-700",
+                                        "w-[240px] justify-start text-left font-normal bg-background/50 border-input",
                                         !currentTime && "text-muted-foreground"
                                     )}
                                 >
@@ -127,11 +127,11 @@ export function TimeControls() {
                                     onSelect={handleDateSelect}
                                     initialFocus
                                 />
-                                <div className="p-3 border-t border-slate-800 bg-slate-950/50">
+                                <div className="p-3 border-t border-border bg-muted/50">
                                     <Label className="text-xs mb-2 block">Time</Label>
                                     <input
                                         type="time"
-                                        className="flex h-9 w-full rounded-md border border-slate-800 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                         value={currentTime ? format(currentTime, "HH:mm") : ""}
                                         onChange={handleTimeChange}
                                     />
@@ -155,11 +155,11 @@ export function TimeControls() {
                         </Popover>
 
                         <div className="flex items-center gap-2 ml-2">
-                            <Label className="text-xs text-slate-500 hidden md:block">Your Location:</Label>
+                            <Label className="text-xs text-muted-foreground hidden md:block">Your Location:</Label>
                             <TimezoneCombobox
                                 value={userTimezone}
                                 onValueChange={setUserTimezone}
-                                className="w-[200px] bg-slate-950/50 border-slate-700"
+                                className="w-[200px] bg-background/50 border-input"
                             />
                         </div>
                     </div>
@@ -172,9 +172,9 @@ export function TimeControls() {
 
                 {/* Slider Section */}
                 <div className="space-y-4">
-                    <div className="flex justify-between text-sm text-slate-400">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                         <span>{getRelativeTime()}</span>
-                        <span className="font-mono text-emerald-400">
+                        <span className="font-mono text-emerald-500 dark:text-emerald-400">
                             {format(currentTime, use24Hour ? "HH:mm" : "h:mm a")}
                         </span>
                     </div>
@@ -183,7 +183,7 @@ export function TimeControls() {
                         {/* Tickmarks */}
                         {tickmarks}
 
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-xs text-slate-500 font-mono">Now</div>
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 text-xs text-muted-foreground font-mono">Now</div>
 
                         <Slider
                             defaultValue={[0]}
@@ -199,7 +199,7 @@ export function TimeControls() {
                         <div className="absolute top-4 bottom-0 left-1/2 w-0.5 bg-emerald-500/50 pointer-events-none h-4" />
                     </div>
 
-                    <div className="flex justify-between text-xs text-slate-600 font-mono">
+                    <div className="flex justify-between text-xs text-muted-foreground font-mono">
                         <span>-{Math.round(rangeLimit / 60)}h</span>
                         <span>+{Math.round(rangeLimit / 60)}h</span>
                     </div>

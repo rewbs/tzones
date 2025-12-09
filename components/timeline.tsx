@@ -52,18 +52,18 @@ function SortableTimelineRow({ city, currentTime, use24Hour, hoursToRender }: an
     const minuteOffsetPx = (currentMinute / 60) * HOUR_WIDTH
 
     return (
-        <div ref={setNodeRef} style={style} className="flex border-b border-slate-800/50 h-16 bg-slate-900/50">
+        <div ref={setNodeRef} style={style} className="flex border-b border-border h-16 bg-card/50">
             {/* Sidebar with Drag Handle */}
-            <div className="w-48 shrink-0 bg-slate-900/95 backdrop-blur z-10 border-r border-slate-800 p-2 flex items-center gap-2 relative">
-                <button className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400" {...attributes} {...listeners}>
+            <div className="w-48 shrink-0 bg-card/95 backdrop-blur z-10 border-r border-border p-2 flex items-center gap-2 relative">
+                <button className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
                     <GripVertical className="h-4 w-4" />
                 </button>
                 <div className="flex flex-col justify-center overflow-hidden">
                     <div className="font-medium text-sm truncate">{city.name}</div>
-                    <div className="text-xs text-slate-400">
+                    <div className="text-xs text-muted-foreground">
                         {format(localTime, use24Hour ? "HH:mm" : "h:mm a")}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-muted-foreground">
                         {format(localTime, "EEE, MMM d")}
                     </div>
                 </div>
@@ -83,19 +83,19 @@ function SortableTimelineRow({ city, currentTime, use24Hour, hoursToRender }: an
                         const blockTime = addHours(startOfHour(localTime), i)
                         const h = blockTime.getHours()
 
-                        let bgClass = "bg-slate-950/50" // Night
-                        if (h >= 6 && h < 18) bgClass = "bg-emerald-900/20" // Day
-                        if (h >= 9 && h < 17) bgClass = "bg-emerald-900/40" // Business
+                        let bgClass = "bg-background/80" // Night
+                        if (h >= 6 && h < 18) bgClass = "bg-yellow-500/10 dark:bg-emerald-900/20" // Day
+                        if (h >= 9 && h < 17) bgClass = "bg-yellow-500/20 dark:bg-emerald-900/40" // Business
 
                         const isMidnight = h === 0
 
                         return (
                             <div
                                 key={i}
-                                className={`w-[60px] h-full border-r border-slate-800/30 flex items-center justify-center text-xs text-slate-500 relative ${bgClass}`}
+                                className={`w-[60px] h-full border-r border-border/30 flex items-center justify-center text-xs text-muted-foreground relative ${bgClass}`}
                             >
                                 {isMidnight ? (
-                                    <span className="font-bold text-slate-300">{format(blockTime, "EEE")}</span>
+                                    <span className="font-bold text-foreground">{format(blockTime, "EEE")}</span>
                                 ) : (
                                     <span>{use24Hour ? h : format(blockTime, "h a")}</span>
                                 )}
@@ -169,8 +169,8 @@ export function Timeline() {
     const hoursToRender = Array.from({ length: 25 }, (_, i) => i - 12)
 
     return (
-        <div className="bg-slate-900/50 backdrop-blur-md border border-slate-800 rounded-xl overflow-hidden shadow-xl select-none">
-            <div className="p-4 border-b border-slate-800 font-medium text-slate-400 text-sm flex justify-between">
+        <div className="bg-card/50 backdrop-blur-md border border-border rounded-xl overflow-hidden shadow-xl select-none">
+            <div className="p-4 border-b border-border font-medium text-muted-foreground text-sm flex justify-between">
                 <span>Timeline (Drag track to scroll, drag handle to reorder)</span>
                 <div className="w-0.5 h-4 bg-emerald-500 mx-auto absolute left-1/2 top-12 z-20" />
             </div>

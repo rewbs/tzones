@@ -98,6 +98,7 @@ export function TimeProvider({ children }: { children: React.ReactNode }) {
                 if (parsed.cities) setCities(parsed.cities)
                 if (parsed.use24Hour !== undefined) setUse24Hour(parsed.use24Hour)
                 if (parsed.userTimezone) setUserTimezone(parsed.userTimezone)
+                if (parsed.offsetMinutes !== undefined) setOffsetMinutes(parsed.offsetMinutes)
             } catch (e) {
                 console.error("Failed to load state", e)
             }
@@ -109,9 +110,10 @@ export function TimeProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem("tzones-state", JSON.stringify({
             cities,
             use24Hour,
-            userTimezone
+            userTimezone,
+            offsetMinutes
         }))
-    }, [cities, use24Hour, userTimezone])
+    }, [cities, use24Hour, userTimezone, offsetMinutes])
 
     // Update real time every second
     useEffect(() => {
