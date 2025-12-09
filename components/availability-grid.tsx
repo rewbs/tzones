@@ -15,6 +15,7 @@ interface AvailabilityGridProps {
     onTimeChange?: (time: Date) => void
     timezone?: string
     is24Hour?: boolean
+    onBroadcast?: (slots: string[]) => void
 }
 
 // Helper to check set equality
@@ -31,7 +32,7 @@ interface Coordinate {
     timeIndex: number
 }
 
-export function AvailabilityGrid({ participantId, initialAvailability = [], onSave, selectedTime, participants = [], onTimeChange, timezone = Intl.DateTimeFormat().resolvedOptions().timeZone, is24Hour = false }: AvailabilityGridProps) {
+export function AvailabilityGrid({ participantId, initialAvailability = [], onSave, selectedTime, participants = [], onTimeChange, timezone = Intl.DateTimeFormat().resolvedOptions().timeZone, is24Hour = false, onBroadcast }: AvailabilityGridProps) {
     const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
     const selectedSlotsRef = useRef(selectedSlots) // Track latest slots in Ref
 
@@ -133,6 +134,11 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
             const slotsToSave = new Set(selectedSlotsRef.current)
             await handleSave(slotsToSave)
 
+            // Broadcast to other clients via Ably
+            if (onBroadcast) {
+                onBroadcast(Array.from(slotsToSave))
+            }
+
             setSaveStatus("saved")
 
             // WE DO NOT CLEAR 'hasUnsavedChanges' HERE ANYMORE.
@@ -142,7 +148,7 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
         }, 1000) // Debounce 1s
 
         return () => clearTimeout(timer)
-    }, [selectedSlots, hasUnsavedChanges, isDragging])
+    }, [selectedSlots, hasUnsavedChanges, isDragging, onBroadcast])
 
     // Calculate Heatmap
     useEffect(() => {

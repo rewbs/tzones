@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { JoinMeetingDialog } from "./join-meeting-dialog"
 import { AvailabilityGrid } from "./availability-grid"
@@ -12,14 +12,16 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { MeetingTimeline } from "./meeting-timeline"
 import { ModeToggle } from "./mode-toggle"
-import { Loader2, Pencil, Check, X } from "lucide-react"
+import { Loader2, Pencil, Check, X, Users, Wifi, WifiOff } from "lucide-react"
 import { MeetingTimeDetails } from "./meeting-time-details"
 import { MeetingDiscordWidget } from "./meeting-discord-widget"
 import { toZonedTime } from "date-fns-tz"
-import { format } from "date-fns"
+import { format, addMinutes } from "date-fns"
 import { Copy, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
+import { AblyProvider } from "./ably-provider"
+import { useMeetingChannel } from "@/hooks/use-meeting-channel"
 
 interface Participant {
     id: string
@@ -34,7 +36,9 @@ interface Meeting {
     participants: Participant[]
 }
 
-export function MeetingView({ meeting }: { meeting: Meeting }) {
+// Inner component that uses Ably hooks
+function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initialMeeting: Meeting }) {
+    const [localParticipants, setLocalParticipants] = useState<Participant[]>(meeting.participants)
     const [participant, setParticipant] = useState<Participant | null>(null)
     const [showJoinDialog, setShowJoinDialog] = useState(false)
     const [isUpdatingTimezone, setIsUpdatingTimezone] = useState(false)
@@ -62,6 +66,84 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
         setSelectedTime(now)
     }, [])
 
+    // Handle remote availability updates
+    const handleRemoteAvailabilityUpdate = useCallback((remoteParticipantId: string, slots: string[]) => {
+        // Don't update if it's our own change
+        if (remoteParticipantId === participant?.id) return
+
+        // Convert slots back to availability ranges for the participant
+        const sortedSlots = slots.sort()
+        const ranges: { startTime: Date; endTime: Date }[] = []
+
+        if (sortedSlots.length > 0) {
+            let currentStart = new Date(sortedSlots[0])
+            let currentEnd = addMinutes(currentStart, 30)
+
+            for (let i = 1; i < sortedSlots.length; i++) {
+                const slotTime = new Date(sortedSlots[i])
+                if (slotTime.getTime() === currentEnd.getTime()) {
+                    currentEnd = addMinutes(slotTime, 30)
+                } else {
+                    ranges.push({ startTime: currentStart, endTime: currentEnd })
+                    currentStart = slotTime
+                    currentEnd = addMinutes(slotTime, 30)
+                }
+            }
+            ranges.push({ startTime: currentStart, endTime: currentEnd })
+        }
+
+        // Update local participants state
+        setLocalParticipants(prev => prev.map(p =>
+            p.id === remoteParticipantId
+                ? { ...p, availability: ranges }
+                : p
+        ))
+
+        toast.info(`${localParticipants.find(p => p.id === remoteParticipantId)?.name || 'Someone'} updated their availability`)
+    }, [participant?.id, localParticipants])
+
+    // Handle remote participant joined
+    const handleRemoteParticipantJoined = useCallback((newParticipant: { id: string; name: string; timezone: string }) => {
+        // Add to local list if not already there
+        setLocalParticipants(prev => {
+            if (prev.some(p => p.id === newParticipant.id)) return prev
+            return [...prev, { ...newParticipant, availability: [] }]
+        })
+        toast.info(`${newParticipant.name} joined the meeting`)
+    }, [])
+
+    // Handle remote timezone update
+    const handleRemoteTimezoneUpdate = useCallback((remoteParticipantId: string, newTimezone: string) => {
+        // Don't update if it's our own change
+        if (remoteParticipantId === participant?.id) return
+
+        // Update local participants state
+        setLocalParticipants(prev => prev.map(p =>
+            p.id === remoteParticipantId
+                ? { ...p, timezone: newTimezone }
+                : p
+        ))
+
+        const participantName = localParticipants.find(p => p.id === remoteParticipantId)?.name || 'Someone'
+        toast.info(`${participantName} changed timezone to ${newTimezone.split('/')[1]?.replace('_', ' ') || newTimezone}`)
+    }, [participant?.id, localParticipants])
+
+    // Ably real-time channel
+    const {
+        isConnected,
+        presenceMembers,
+        broadcastAvailability,
+        broadcastParticipantJoined,
+        broadcastTimezone
+    } = useMeetingChannel({
+        meetingId: meeting.id,
+        participantId: participant?.id,
+        participantName: participant?.name,
+        onAvailabilityUpdate: handleRemoteAvailabilityUpdate,
+        onParticipantJoined: handleRemoteParticipantJoined,
+        onTimezoneUpdate: handleRemoteTimezoneUpdate,
+    })
+
     useEffect(() => {
         // Check local storage for existing participant ID for this meeting
         const storedId = localStorage.getItem(`meeting_participant_${meeting.id}`)
@@ -87,13 +169,26 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
         } else {
             setShowJoinDialog(true)
         }
-    }, [meeting.id, meeting.participants])
+    }, [meeting.id, localParticipants])
 
     const handleJoined = (newParticipant: any) => {
         // Persist to local storage
         localStorage.setItem(`meeting_participant_${meeting.id}`, newParticipant.id)
         setParticipant(newParticipant as Participant)
         setShowJoinDialog(false)
+
+        // Broadcast to other clients
+        broadcastParticipantJoined({
+            id: newParticipant.id,
+            name: newParticipant.name,
+            timezone: newParticipant.timezone,
+        })
+
+        // Add to local list
+        setLocalParticipants(prev => {
+            if (prev.some(p => p.id === newParticipant.id)) return prev
+            return [...prev, { ...newParticipant, availability: [] }]
+        })
     }
 
     const handleSaveAvailability = async (ranges: { startTime: Date; endTime: Date }[]) => {
@@ -129,9 +224,19 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
         // Optimistic update
         setParticipant({ ...participant, timezone: newTimezone })
 
+        // Also update localParticipants so Group Timeline reflects the change
+        setLocalParticipants(prev => prev.map(p =>
+            p.id === participant.id
+                ? { ...p, timezone: newTimezone }
+                : p
+        ))
+
         setIsUpdatingTimezone(true)
         try {
             await updateParticipantTimezone(participant.id, newTimezone)
+
+            // Broadcast to other clients
+            broadcastTimezone(newTimezone)
         } catch (e) {
             // Revert on failure (optional, but good practice)
             toast.error("Failed to update timezone")
@@ -149,10 +254,10 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
             "Prioritize times where everyone is available.",
             "",
             "## Participants & Timezones:",
-            ...meeting.participants.map(p => `- ${p.name}: ${p.timezone}`),
+            ...localParticipants.map(p => `- ${p.name}: ${p.timezone}`),
             "",
             "## Availability (in UTC):",
-            ...meeting.participants.map(p => {
+            ...localParticipants.map(p => {
                 const ranges = p.availability.map(r =>
                     `${format(new Date(r.startTime), "yyyy-MM-dd HH:mm")} to ${format(new Date(r.endTime), "HH:mm")}`
                 ).join(", ")
@@ -168,7 +273,7 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
         toast.success("AI Prompt copied to clipboard!")
     }
 
-    const uniqueTimezones = Array.from(new Set(meeting.participants.map(p => p.timezone)))
+    const uniqueTimezones = Array.from(new Set(localParticipants.map(p => p.timezone)))
     if (participant && !uniqueTimezones.includes(participant.timezone)) {
         uniqueTimezones.push(participant.timezone)
     }
@@ -211,6 +316,20 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
                     <p className="text-muted-foreground text-sm truncate">{meeting.id}</p>
                 </div>
                 <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                    {/* Connection Status */}
+                    <div className="flex items-center gap-1.5" title={isConnected ? 'Real-time sync active' : 'Connecting...'}>
+                        {isConnected ? (
+                            <Wifi className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                            <WifiOff className="w-4 h-4 text-muted-foreground animate-pulse" />
+                        )}
+                        {presenceMembers.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                                <Users className="w-3 h-3 mr-1" />
+                                {presenceMembers.length} online
+                            </Badge>
+                        )}
+                    </div>
                     <Button variant="outline" size="sm" onClick={handleCopyAiPrompt} className="hidden md:flex gap-2">
                         <Sparkles className="w-4 h-4" />
                         Copy AI Prompt
@@ -241,7 +360,7 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
                     </div>
 
                     <MeetingTimeline
-                        participants={meeting.participants}
+                        participants={localParticipants}
                         selectedTime={selectedTime}
                         onTimeChange={setSelectedTime}
                         is24Hour={is24Hour}
@@ -324,10 +443,11 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
                                     initialAvailability={participant.availability}
                                     onSave={handleSaveAvailability}
                                     selectedTime={selectedTime}
-                                    participants={meeting.participants}
+                                    participants={localParticipants}
                                     onTimeChange={setSelectedTime}
                                     timezone={participant.timezone}
                                     is24Hour={is24Hour}
+                                    onBroadcast={broadcastAvailability}
                                 />
                             </CardContent>
                         </Card>
@@ -387,7 +507,7 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
 
                     {/* Col 3: Discord Snippet */}
                     <div className="md:col-span-1 h-full">
-                        <MeetingDiscordWidget selectedTime={selectedTime} participants={meeting.participants} />
+                        <MeetingDiscordWidget selectedTime={selectedTime} participants={localParticipants} />
                     </div>
                 </div>
             </div>
@@ -399,5 +519,30 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
                 onJoined={handleJoined}
             />
         </div>
+    )
+}
+
+// Wrapper component that provides AblyProvider
+export function MeetingView({ meeting }: { meeting: Meeting }) {
+    // Generate a client ID - use stored participant ID if available, otherwise random
+    const [clientId, setClientId] = useState<string>('')
+
+    useEffect(() => {
+        const storedId = localStorage.getItem(`meeting_participant_${meeting.id}`)
+        setClientId(storedId || `anon-${Date.now()}`)
+    }, [meeting.id])
+
+    if (!clientId) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        )
+    }
+
+    return (
+        <AblyProvider clientId={clientId}>
+            <MeetingViewInner meeting={meeting} initialMeeting={meeting} />
+        </AblyProvider>
     )
 }

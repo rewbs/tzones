@@ -54,7 +54,13 @@ export function CityList() {
     const [editingCityId, setEditingCityId] = useState<string | null>(null)
 
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, {
+            // Require 8px of movement before starting drag
+            // This allows clicks to work normally
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
         useSensor(KeyboardSensor, {
             coordinateGetter: sortableKeyboardCoordinates,
         })
