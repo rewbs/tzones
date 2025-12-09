@@ -186,18 +186,49 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
     const hasMoved = useRef(false)
 
     const handleMouseDown = (dayIndex: number, timeIndex: number) => {
+        startDrag(dayIndex, timeIndex)
+    }
+
+    const startDrag = (dayIndex: number, timeIndex: number) => {
         setIsDragging(true)
         setDragStart({ dayIndex, timeIndex })
         setDragCurrent({ dayIndex, timeIndex })
-        hasMoved.current = false // Reset move tracker
+        hasMoved.current = false
 
         const time = getTimeForCoord(dayIndex, timeIndex)
-        // Determine mode based on initial click
         if (selectedSlots.has(time.toISOString())) {
             setDragMode("remove")
         } else {
             setDragMode("add")
         }
+    }
+
+    // Touch handlers for mobile
+    const handleTouchStart = (e: React.TouchEvent, dayIndex: number, timeIndex: number) => {
+        e.preventDefault() // Prevent scroll
+        startDrag(dayIndex, timeIndex)
+    }
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging) return
+        e.preventDefault()
+
+        const touch = e.touches[0]
+        const element = document.elementFromPoint(touch.clientX, touch.clientY)
+        const dayAttr = element?.getAttribute('data-day')
+        const timeAttr = element?.getAttribute('data-time')
+
+        if (dayAttr && timeAttr) {
+            const dayIdx = parseInt(dayAttr, 10)
+            const timeIdx = parseInt(timeAttr, 10)
+            if (!isNaN(dayIdx) && !isNaN(timeIdx)) {
+                handleMouseEnter(dayIdx, timeIdx)
+            }
+        }
+    }
+
+    const handleTouchEnd = () => {
+        handleMouseUp()
     }
 
     const handleMouseEnter = (dayIndex: number, timeIndex: number) => {
@@ -345,7 +376,13 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
     }
 
     return (
-        <div className="space-y-4 select-none" onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
+        <div
+            className="space-y-4 select-none touch-none"
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
+        >
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                     <div className="text-sm font-medium h-3 flex items-center">
@@ -357,7 +394,7 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
             </div>
 
             <div className="relative overflow-x-auto border border-border rounded-lg bg-card/50">
-                <div className="grid grid-cols-[100px_repeat(48,minmax(20px,1fr))] min-w-[1200px]">
+                <div className="grid grid-cols-[80px_repeat(48,minmax(16px,1fr))] md:grid-cols-[100px_repeat(48,minmax(20px,1fr))] min-w-[900px] md:min-w-[1200px]">
                     {/* Header Row (Row 1) */}
                     <div className="p-2 border-b border-r border-border bg-muted/50 font-medium text-sm sticky left-0 z-20 col-span-1" style={{ gridRow: 1 }}>
                         Date / Time
@@ -386,7 +423,7 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
                             <Fragment key={day.toISOString()}>
                                 {/* Row Header */}
                                 <div
-                                    className="p-2 border-r border-border bg-card font-medium text-xs sticky left-0 z-10 flex flex-col justify-center border-b h-12"
+                                    className="p-1 md:p-2 border-r border-border bg-card font-medium text-xs sticky left-0 z-10 flex flex-col justify-center border-b h-10 md:h-12"
                                     style={{ gridRow: rowIdx, gridColumn: 1 }}
                                 >
                                     <span>{format(day, "EEE")}</span>
@@ -416,10 +453,13 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
                                     return (
                                         <div
                                             key={time.toISOString()}
+                                            data-day={dayIdx}
+                                            data-time={i}
                                             onMouseDown={() => handleMouseDown(dayIdx, i)}
                                             onMouseEnter={() => handleMouseEnter(dayIdx, i)}
+                                            onTouchStart={(e) => handleTouchStart(e, dayIdx, i)}
                                             className={cn(
-                                                "border-b border-border/30 h-12 cursor-pointer transition-colors relative",
+                                                "border-b border-border/30 h-10 md:h-12 cursor-pointer transition-colors relative",
                                                 isHourStart ? "border-r border-border/50" : "border-r border-border/30 border-dashed",
                                                 // Hover effect
                                                 !isEffectiveSelected && "hover:bg-emerald-500/10",

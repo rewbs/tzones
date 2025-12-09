@@ -62,7 +62,7 @@ export function JoinMeetingDialog({ meetingId, open, onOpenChange, onJoined }: J
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="w-[95vw] max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Join Meeting</DialogTitle>
                     <DialogDescription>
@@ -71,24 +71,24 @@ export function JoinMeetingDialog({ meetingId, open, onOpenChange, onJoined }: J
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">
+                        <div className="flex flex-col md:grid md:grid-cols-4 md:items-center gap-2 md:gap-4">
+                            <Label htmlFor="name" className="md:text-right">
                                 Name
                             </Label>
                             <Input
                                 id="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="col-span-3"
+                                className="md:col-span-3"
                                 placeholder="Alice"
                                 autoFocus
                             />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="timezone" className="text-right">
+                        <div className="flex flex-col md:grid md:grid-cols-4 md:items-center gap-2 md:gap-4">
+                            <Label htmlFor="timezone" className="md:text-right">
                                 Timezone
                             </Label>
-                            <div className="col-span-3">
+                            <div className="md:col-span-3">
                                 <TimezoneCombobox
                                     value={timezone}
                                     onValueChange={setTimezone}
@@ -98,7 +98,7 @@ export function JoinMeetingDialog({ meetingId, open, onOpenChange, onJoined }: J
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button type="submit" disabled={loading || !name.trim()}>
+                        <Button type="submit" disabled={loading || !name.trim()} className="w-full md:w-auto">
                             {loading ? "Joining..." : "Join"}
                         </Button>
                     </DialogFooter>

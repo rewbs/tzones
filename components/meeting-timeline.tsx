@@ -171,28 +171,48 @@ export function MeetingTimeline({
     const [isDragging, setIsDragging] = useState(false)
     const [dragStartX, setDragStartX] = useState(0)
 
-    const handleMouseDown = (e: React.MouseEvent) => {
+    // Unified handler for both mouse and touch
+    const handleDragStart = (clientX: number) => {
         setIsDragging(true)
-        setDragStartX(e.clientX)
+        setDragStartX(clientX)
     }
+
+    const handleDragMove = (clientX: number) => {
+        if (!isDragging) return
+        const deltaX = dragStartX - clientX
+        const deltaMinutes = Math.round(deltaX * (60 / HOUR_WIDTH))
+
+        if (deltaMinutes !== 0) {
+            const newTime = new Date(selectedTime.getTime() + deltaMinutes * 60 * 1000)
+            onTimeChange(newTime)
+            setDragStartX(clientX)
+        }
+    }
+
+    const handleDragEnd = () => {
+        setIsDragging(false)
+    }
+
+    // Mouse handlers
+    const handleMouseDown = (e: React.MouseEvent) => handleDragStart(e.clientX)
+
+    // Touch handlers
+    const handleTouchStart = (e: React.TouchEvent) => {
+        handleDragStart(e.touches[0].clientX)
+    }
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        e.preventDefault() // Prevent scroll while dragging
+        handleDragMove(e.touches[0].clientX)
+    }
+
+    const handleTouchEnd = () => handleDragEnd()
 
     useEffect(() => {
         if (!isDragging) return
 
-        const handleMouseMove = (e: MouseEvent) => {
-            const deltaX = dragStartX - e.clientX
-            const deltaMinutes = Math.round(deltaX * (60 / HOUR_WIDTH))
-
-            if (deltaMinutes !== 0) {
-                const newTime = new Date(selectedTime.getTime() + deltaMinutes * 60 * 1000)
-                onTimeChange(newTime)
-                setDragStartX(e.clientX)
-            }
-        }
-
-        const handleMouseUp = () => {
-            setIsDragging(false)
-        }
+        const handleMouseMove = (e: MouseEvent) => handleDragMove(e.clientX)
+        const handleMouseUp = () => handleDragEnd()
 
         window.addEventListener("mousemove", handleMouseMove)
         window.addEventListener("mouseup", handleMouseUp)
@@ -211,14 +231,17 @@ export function MeetingTimeline({
 
     return (
         <div className="bg-card/50 backdrop-blur-md border border-border rounded-xl overflow-hidden shadow-xl select-none">
-            <div className="p-4 border-b border-border font-medium text-muted-foreground text-sm">
+            <div className="p-3 md:p-4 border-b border-border font-medium text-muted-foreground text-xs md:text-sm">
                 Group Availability (Drag to view different times)
             </div>
 
             <div
                 ref={containerRef}
-                className="relative overflow-hidden cursor-grab active:cursor-grabbing"
+                className="relative overflow-hidden cursor-grab active:cursor-grabbing touch-none"
                 onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
             >
                 {participants.map(p => (
                     <ParticipantRow

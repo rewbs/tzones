@@ -179,11 +179,11 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
             <div className="flex flex-row justify-between items-center gap-2">
                 <div className="flex flex-col gap-2">
                     {isEditingTitle ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <Input
                                 value={editedTitle}
                                 onChange={(e) => setEditedTitle(e.target.value)}
-                                className="text-2xl font-bold h-10 w-[300px]"
+                                className="text-xl md:text-2xl font-bold h-10 w-full md:w-[300px]"
                             />
                             <Button size="icon" variant="ghost" onClick={handleTitleSave} disabled={isSavingTitle}>
                                 <Check className="w-5 h-5 text-emerald-500" />
@@ -197,7 +197,7 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
                         </div>
                     ) : (
                         <div className="flex items-center gap-2 group">
-                            <h1 className="text-3xl font-bold">{optimisticTitle}</h1>
+                            <h1 className="text-2xl md:text-3xl font-bold">{optimisticTitle}</h1>
                             <Button
                                 size="icon"
                                 variant="ghost"
@@ -208,9 +208,9 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
                             </Button>
                         </div>
                     )}
-                    <p className="text-muted-foreground">Meeting ID: {meeting.id}</p>
+                    <p className="text-muted-foreground text-sm truncate">{meeting.id}</p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 md:gap-4 flex-wrap">
                     <Button variant="outline" size="sm" onClick={handleCopyAiPrompt} className="hidden md:flex gap-2">
                         <Sparkles className="w-4 h-4" />
                         Copy AI Prompt
@@ -226,8 +226,8 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
             <div className="space-y-8">
                 {/* 1. Group Timeline (Main Controller) */}
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-semibold">Group Timeline</h2>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                        <h2 className="text-xl md:text-2xl font-semibold">Group Timeline</h2>
                         <p className="text-sm text-muted-foreground">
                             {participant ? (
                                 <>
@@ -270,12 +270,12 @@ export function MeetingView({ meeting }: { meeting: Meeting }) {
                                             Drag to select times you are free. The vertical markers correspond to the selected time above.
                                         </CardDescription>
                                     </div>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         {isUpdatingTimezone && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                                         <TimezoneCombobox
                                             value={participant.timezone}
                                             onValueChange={handleTimezoneChange}
-                                            className="w-[200px]"
+                                            className="w-full md:w-[200px]"
                                             disabled={isUpdatingTimezone}
                                         />
 

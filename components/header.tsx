@@ -23,8 +23,8 @@ export function Header() {
     }
 
     return (
-        <header className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
                 Global Time Zone Comparison
             </h1>
             <div className="flex items-center gap-2">
@@ -33,9 +33,10 @@ export function Header() {
                     onClick={handleCreateMeeting}
                     disabled={isCreating}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    size="sm"
                 >
-                    {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                    New Meeting
+                    {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    <span className="hidden md:inline ml-2">New Meeting</span>
                 </Button>
             </div>
         </header>
