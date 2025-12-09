@@ -71,7 +71,7 @@ export function Header() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="sm" className="gap-1">
                                 <Clock className="h-4 w-4" />
-                                <span className="hidden md:inline">Recent Meetings</span>
+                                <span className="inline">Recent Meetings</span>
                                 <ChevronDown className="h-3 w-3" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -99,7 +99,7 @@ export function Header() {
                     size="sm"
                 >
                     {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    <span className="hidden md:inline ml-2">New Meeting</span>
+                    <span className="inline ml-2">New Meeting</span>
                 </Button>
             </div>
         </header>

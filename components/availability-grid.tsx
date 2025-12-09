@@ -5,7 +5,7 @@ import { addDays, format, startOfDay, addMinutes, isSameMinute, startOfMinute } 
 import { fromZonedTime, toZonedTime } from "date-fns-tz"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Hand, MousePointer2, Pen } from "lucide-react"
+import { Hand, MousePointer2, Pen, Loader2, Check } from "lucide-react"
 
 interface AvailabilityGridProps {
     participantId: string
@@ -17,6 +17,7 @@ interface AvailabilityGridProps {
     timezone?: string
     is24Hour?: boolean
     onBroadcast?: (slots: string[]) => void
+    controls?: React.ReactNode
 }
 
 // Helper to check set equality
@@ -33,7 +34,7 @@ interface Coordinate {
     timeIndex: number
 }
 
-export function AvailabilityGrid({ participantId, initialAvailability = [], onSave, selectedTime, participants = [], onTimeChange, timezone = Intl.DateTimeFormat().resolvedOptions().timeZone, is24Hour = false, onBroadcast }: AvailabilityGridProps) {
+export function AvailabilityGrid({ participantId, initialAvailability = [], onSave, selectedTime, participants = [], onTimeChange, timezone = Intl.DateTimeFormat().resolvedOptions().timeZone, is24Hour = false, onBroadcast, controls }: AvailabilityGridProps) {
     const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set())
     const selectedSlotsRef = useRef(selectedSlots) // Track latest slots in Ref
 
@@ -369,35 +370,46 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
 
     return (
         <div
-            className="space-y-4 select-none"
+            className="space-y-2 select-none"
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onTouchEnd={handleTouchEnd}
-            onTouchMove={handleTouchMove}
+            onTouchMove={handleTouchEnd}
         >
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                    <div className="text-sm font-medium h-3 flex items-center">
-                        {saveStatus === "saving" && <span className="text-muted-foreground">Saving...</span>}
-                        {saveStatus === "saved" && <span className="text-emerald-500">Saved</span>}
-                        {hasUnsavedChanges && saveStatus === "idle" && <span className="text-amber-500">Unsaved changes...</span>}
-                    </div>
-                </div>
+            <div className="flex flex-col gap-2">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    {/* Left: Controls & Status */}
+                    <div className="flex flex-col md:flex-row md:items-center gap-3 w-full md:w-auto">
+                        {/* Injected Controls (Timezone, View As) */}
+                        {controls && (
+                            <div className="flex-1 md:flex-none">
+                                {controls}
+                            </div>
+                        )}
 
-                {/* Edit Mode Toggle */}
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">
-                        {isSelectionMode ? "Tap/Drag to Edit" : "Tap to Set Time"}
-                    </span>
-                    <Button
-                        size="sm"
-                        variant={isSelectionMode ? "default" : "outline"}
-                        onClick={() => setIsSelectionMode(!isSelectionMode)}
-                        className="h-8 gap-2"
-                    >
-                        {isSelectionMode ? <Pen className="h-3 w-3" /> : <Hand className="h-3 w-3" />}
-                        {isSelectionMode ? "Editing" : "Viewing"}
-                    </Button>
+                        {/* Status Indicator */}
+                        <div className="flex items-center h-5 text-sm font-medium whitespace-nowrap">
+                            {saveStatus === "saving" && <span className="text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Saving...</span>}
+                            {saveStatus === "saved" && <span className="text-emerald-500 flex items-center gap-1"><Check className="h-3 w-3" /> Saved</span>}
+                            {hasUnsavedChanges && saveStatus === "idle" && <span className="text-amber-500">Unsaved changes...</span>}
+                        </div>
+                    </div>
+
+                    {/* Right: Edit Mode Toggle */}
+                    <div className="flex items-center gap-2 self-end md:self-auto">
+                        <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">
+                            {isSelectionMode ? "Tap/Drag to Edit" : "Tap to Set Time"}
+                        </span>
+                        <Button
+                            size="sm"
+                            variant={isSelectionMode ? "default" : "outline"}
+                            onClick={() => setIsSelectionMode(!isSelectionMode)}
+                            className="h-8 gap-2"
+                        >
+                            {isSelectionMode ? <Pen className="h-3 w-3" /> : <Hand className="h-3 w-3" />}
+                            {isSelectionMode ? "Editing" : "Viewing"}
+                        </Button>
+                    </div>
                 </div>
             </div>
 

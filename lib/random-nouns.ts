@@ -16,24 +16,26 @@ export const ADJECTIVES = [
 ]
 
 export const NOUNS = [
-    "Potato", "Octopus", "Banjo", "Wombat", "Platypus", "Marshmallow",
-    "Spatula", "Toaster", "Penguin", "Giraffe", "Elephant", "Kangaroo",
-    "Unicorn", "Dragon", "Dinosaur", "Robot", "Alien", "Ghost",
-    "Pirate", "Ninja", "Wizard", "Clown", "Jellyfish", "Starfish",
-    "Pancake", "Waffle", "Biscuit", "Cookie", "Muffin", "Cupcake",
-    "Taco", "Burrito", "Pizza", "Burger", "Sandwich", "Salad",
-    "Apple", "Banana", "Orange", "Grape", "Melon", "Berry",
-    "Car", "Bus", "Train", "Plane", "Boat", "Ship",
-    "Tree", "Flower", "Grass", "Leaf", "Cloud", "Sun", "Moon", "Star",
-    "Cat", "Dog", "Bird", "Fish", "Mouse", "Rat",
-    "Hat", "Shoe", "Sock", "Shirt", "Pants", "Dress",
-    "Book", "Pen", "Pencil", "Paper", "Crayon", "Marker",
-    "Chair", "Table", "Bed", "Desk", "Lamp", "Rug",
-    "Pickle", "Cucumber", "Tomato", "Carrot", "Onion", "Garlic",
-    "Cheese", "Milk", "Yogurt", "Butter", "Cream", "Ice",
-    "Trombone", "Kazoo", "Didgeridoo", "Accordion", "Bagpipe",
-    "Gazebo", "Pergola", "Bungalow", "Igloo", "Teepee",
-    "Narwhal", "Manatee", "Capybara", "Axolotl", "Pangolin"
+    "blorp", "snoot", "wombat", "gherkin", "spatula",
+    "nugget", "kumquat", "dingus", "floof", "sprocket",
+    "bobbin", "smock", "plonk", "giblet", "noodle",
+    "turnip", "widget", "bungus", "clonk", "spleen",
+    "whelk", "tuber", "crumpet", "blunderbuss", "gizzard",
+    "snorkel", "bumble", "winkle", "throttle", "pudding",
+    "brisket", "clump", "dweeb", "flange", "grommet",
+    "hobnob", "inkblot", "jamb", "kerfuffle", "lozenge",
+    "mullet", "nubbin", "oink", "plinth", "quahog",
+    "rumpus", "squib", "trundle", "uvula", "vortex",
+    "waddle", "xylophone", "yam", "zeppelin", "armadillo",
+    "boggle", "chutney", "dollop", "eggnog", "fungus",
+    "gazebo", "hullabaloo", "igloo", "jalopy", "kazoo",
+    "lemur", "mongoose", "newt", "octopus", "platypus",
+    "quiche", "rhubarb", "splotch", "trousers", "ukulele",
+    "vestibule", "wigwam", "yodel", "zucchini", "barnacle",
+    "codswallop", "dingleberry", "elbow", "flapjack", "goober",
+    "hooligan", "intestine", "jiggle", "knickers", "larynx",
+    "muffin", "nipple", "orifice", "pants", "quibble",
+    "rutabaga", "schnitzel", "trombone", "underpants", "vuvuzela"
 ]
 
 export function getRandomMeetingName() {

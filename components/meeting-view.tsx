@@ -301,62 +301,105 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
     return (
         <div className="container mx-auto p-4 md:p-8 max-w-[1400px] space-y-8">
             {/* Header */}
-            <div className="flex flex-row justify-between items-center gap-2">
-                <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
+                {/* Mobile Top Row: Back Link + Connection Status */}
+                <div className="flex items-center justify-between md:hidden">
                     <a
                         href="/"
                         className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
                     >
-                        ← Back to Timezone Comparison
+                        ← Back
                     </a>
-                    {isEditingTitle ? (
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <Input
-                                value={editedTitle}
-                                onChange={(e) => setEditedTitle(e.target.value)}
-                                className="text-xl md:text-2xl font-bold h-10 w-full md:w-[300px]"
-                            />
-                            <Button size="icon" variant="ghost" onClick={handleTitleSave} disabled={isSavingTitle}>
-                                <Check className="w-5 h-5 text-emerald-500" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={() => {
-                                setIsEditingTitle(false)
-                                setEditedTitle(optimisticTitle)
-                            }}>
-                                <X className="w-5 h-5 text-red-500" />
-                            </Button>
+
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5" title={isConnected ? 'Real-time sync active' : 'Connecting...'}>
+                            {isConnected ? (
+                                <Wifi className="w-3 h-3 text-emerald-500" />
+                            ) : (
+                                <WifiOff className="w-3 h-3 text-muted-foreground animate-pulse" />
+                            )}
+                            {presenceMembers.length > 0 && (
+                                <Badge variant="secondary" className="text-[10px] px-1 h-5">
+                                    <Users className="w-3 h-3 mr-1" />
+                                    {presenceMembers.length}
+                                </Badge>
+                            )}
                         </div>
-                    ) : (
-                        <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingTitle(true)}>
-                            <h1 className="text-2xl md:text-3xl font-bold">{optimisticTitle}</h1>
-                            <Pencil className="w-4 h-4 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                    )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-                    {/* Connection Status */}
-                    <div className="flex items-center gap-1.5" title={isConnected ? 'Real-time sync active' : 'Connecting...'}>
-                        {isConnected ? (
-                            <Wifi className="w-4 h-4 text-emerald-500" />
-                        ) : (
-                            <WifiOff className="w-4 h-4 text-muted-foreground animate-pulse" />
-                        )}
-                        {presenceMembers.length > 0 && (
-                            <Badge variant="secondary" className="text-xs">
-                                <Users className="w-3 h-3 mr-1" />
-                                {presenceMembers.length} online
-                            </Badge>
-                        )}
+
+                {/* DeskTop/Main Layout */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex flex-col gap-2 w-full md:w-auto">
+                        <a
+                            href="/"
+                            className="text-sm text-muted-foreground hover:text-foreground hidden md:flex items-center gap-1 transition-colors"
+                        >
+                            ← Back to Timezone Comparison
+                        </a>
+
+                        {/* Title Row */}
+                        <div className="flex items-center justify-between w-full md:w-auto gap-4">
+                            {isEditingTitle ? (
+                                <div className="flex items-center gap-2 flex-1 md:flex-none">
+                                    <Input
+                                        value={editedTitle}
+                                        onChange={(e) => setEditedTitle(e.target.value)}
+                                        className="text-xl md:text-2xl font-bold h-10 w-full md:w-[300px]"
+                                    />
+                                    <Button size="icon" variant="ghost" onClick={handleTitleSave} disabled={isSavingTitle}>
+                                        <Check className="w-5 h-5 text-emerald-500" />
+                                    </Button>
+                                    <Button size="icon" variant="ghost" onClick={() => {
+                                        setIsEditingTitle(false)
+                                        setEditedTitle(optimisticTitle)
+                                    }}>
+                                        <X className="w-5 h-5 text-red-500" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingTitle(true)}>
+                                    <h1 className="text-2xl md:text-3xl font-bold truncate max-w-[200px] md:max-w-none">{optimisticTitle}</h1>
+                                    <Pencil className="w-4 h-4 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            )}
+
+                            {/* Mobile Controls (Inline with Title) */}
+                            <div className="flex items-center gap-2 md:hidden">
+                                <div className="flex items-center space-x-1">
+                                    <Switch id="airline-mode-mobile" checked={is24Hour} onCheckedChange={setIs24Hour} className="scale-75 origin-right" />
+                                    <Label htmlFor="airline-mode-mobile" className="text-xs">24h</Label>
+                                </div>
+                                <ModeToggle />
+                            </div>
+                        </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={handleCopyAiPrompt} className="hidden md:flex gap-2">
-                        <Sparkles className="w-4 h-4" />
-                        Copy AI Prompt
-                    </Button>
-                    <div className="flex items-center space-x-2">
-                        <Switch id="airline-mode" checked={is24Hour} onCheckedChange={setIs24Hour} />
-                        <Label htmlFor="airline-mode">24h</Label>
+
+                    {/* Desktop Right Controls */}
+                    <div className="hidden md:flex items-center gap-4">
+                        <div className="flex items-center gap-1.5" title={isConnected ? 'Real-time sync active' : 'Connecting...'}>
+                            {isConnected ? (
+                                <Wifi className="w-4 h-4 text-emerald-500" />
+                            ) : (
+                                <WifiOff className="w-4 h-4 text-muted-foreground animate-pulse" />
+                            )}
+                            {presenceMembers.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">
+                                    <Users className="w-3 h-3 mr-1" />
+                                    {presenceMembers.length} online
+                                </Badge>
+                            )}
+                        </div>
+                        <Button variant="outline" size="sm" onClick={handleCopyAiPrompt} className="flex gap-2">
+                            <Sparkles className="w-4 h-4" />
+                            Copy AI Prompt
+                        </Button>
+                        <div className="flex items-center space-x-2">
+                            <Switch id="airline-mode" checked={is24Hour} onCheckedChange={setIs24Hour} />
+                            <Label htmlFor="airline-mode">24h</Label>
+                        </div>
+                        <ModeToggle />
                     </div>
-                    <ModeToggle />
                 </div>
             </div>
 
@@ -426,96 +469,95 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
 
                 {/* 2. My Availability (Full Width) */}
                 <div>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
-                        <div>
-                            <h2 className="text-xl md:text-2xl font-semibold">My Availability</h2>
-                            {participant && (
-                                <p className="text-sm text-muted-foreground">
-                                    Drag to select times you are free. The vertical markers correspond to the selected time above.
-                                </p>
-                            )}
-                        </div>
-                        {localParticipants.length > 0 && (
-                            <div className="flex items-center gap-2 flex-wrap">
-                                {/* View As / Impersonate Dropdown */}
-                                <div className="flex items-center gap-1 border border-input rounded-md px-2 h-10 bg-background">
-                                    <span className="text-xs text-muted-foreground mr-1">View as:</span>
-                                    <select
-                                        className="bg-transparent text-sm font-medium focus:outline-none max-w-[120px]"
-                                        value={participant?.id || ''}
-                                        onChange={(e) => {
-                                            const newId = e.target.value
-                                            const p = localParticipants.find(p => p.id === newId)
-                                            if (p) {
-                                                setParticipant(p as Participant)
-                                                localStorage.setItem(`meeting_participant_${meeting.id}`, p.id)
-                                            }
-                                        }}
-                                    >
-                                        {!participant && <option value="">Select participant...</option>}
-                                        {localParticipants.map(p => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
+                    <div>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+                            <div>
+                                <h2 className="text-xl md:text-2xl font-semibold">My Availability</h2>
                                 {participant && (
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        title="Copy personalized link"
-                                        onClick={() => {
-                                            const url = new URL(window.location.href)
-                                            url.searchParams.set('participantId', participant.id)
-                                            navigator.clipboard.writeText(url.toString())
-                                            toast.success(`Link for ${participant.name} copied!`)
-                                        }}
-                                    >
-                                        <Copy className="w-4 h-4" />
-                                    </Button>
+                                    <p className="text-sm text-muted-foreground hidden md:block">
+                                        Drag to select times you are free. The vertical markers correspond to the selected time above.
+                                    </p>
                                 )}
                             </div>
+                        </div>
+
+                        {participant ? (
+                            <AvailabilityGrid
+                                key={participant.id}
+                                participantId={participant.id}
+                                initialAvailability={participant.availability}
+                                onSave={handleSaveAvailability}
+                                selectedTime={selectedTime}
+                                participants={localParticipants}
+                                onTimeChange={setSelectedTime}
+                                timezone={participant.timezone || "UTC"}
+                                is24Hour={is24Hour}
+                                onBroadcast={broadcastAvailability}
+                                controls={
+                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-2 w-full md:w-auto">
+                                        {/* View As Control */}
+                                        {localParticipants.length > 0 && (
+                                            <div className="flex items-center gap-1 border border-input rounded-md px-2 h-8 bg-background shadow-sm w-full md:w-auto">
+                                                <span className="text-xs text-muted-foreground mr-1 whitespace-nowrap">View as:</span>
+                                                <select
+                                                    className="bg-transparent text-sm font-medium focus:outline-none w-full md:w-auto"
+                                                    value={participant?.id || ''}
+                                                    onChange={(e) => {
+                                                        const newId = e.target.value
+                                                        const p = localParticipants.find(p => p.id === newId)
+                                                        if (p) {
+                                                            setParticipant(p as Participant)
+                                                            localStorage.setItem(`meeting_participant_${meeting.id}`, p.id)
+                                                        }
+                                                    }}
+                                                >
+                                                    {!participant && <option value="">Select...</option>}
+                                                    {localParticipants.map(p => (
+                                                        <option key={p.id} value={p.id}>
+                                                            {p.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+
+                                                {participant && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 ml-1"
+                                                        title="Copy personalized link"
+                                                        onClick={() => {
+                                                            const url = new URL(window.location.href)
+                                                            url.searchParams.set('participantId', participant.id)
+                                                            navigator.clipboard.writeText(url.toString())
+                                                            toast.success(`Link for ${participant.name} copied!`)
+                                                        }}
+                                                    >
+                                                        <Copy className="w-3 h-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Timezone Control */}
+                                        <div className="flex items-center gap-2 w-full md:w-auto">
+                                            {isUpdatingTimezone && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                                            <TimezoneCombobox
+                                                value={participant.timezone}
+                                                onValueChange={handleTimezoneChange}
+                                                className="w-full md:w-[220px] h-8"
+                                                disabled={isUpdatingTimezone}
+                                            />
+                                        </div>
+                                    </div>
+                                }
+                            />
+                        ) : (
+                            <Card className="bg-card/50 backdrop-blur-md border-border flex flex-col justify-center items-center p-8">
+                                <p className="text-muted-foreground mb-4">Join the meeting to set your availability.</p>
+                                <Button onClick={() => setShowJoinDialog(true)}>Join Meeting</Button>
+                            </Card>
                         )}
                     </div>
-
-                    {participant ? (
-                        <Card className="bg-card/50 backdrop-blur-md border-border w-full">
-                            <CardHeader>
-                                <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        {isUpdatingTimezone && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                                        <TimezoneCombobox
-                                            value={participant.timezone}
-                                            onValueChange={handleTimezoneChange}
-                                            className="w-full md:w-[200px]"
-                                            disabled={isUpdatingTimezone}
-                                        />
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <AvailabilityGrid
-                                    key={participant.id}
-                                    participantId={participant.id}
-                                    initialAvailability={participant.availability}
-                                    onSave={handleSaveAvailability}
-                                    selectedTime={selectedTime}
-                                    participants={localParticipants}
-                                    onTimeChange={setSelectedTime}
-                                    timezone={participant.timezone}
-                                    is24Hour={is24Hour}
-                                    onBroadcast={broadcastAvailability}
-                                />
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <Card className="bg-card/50 backdrop-blur-md border-border flex flex-col justify-center items-center p-8">
-                            <p className="text-muted-foreground mb-4">Join the meeting to set your availability.</p>
-                            <Button onClick={() => setShowJoinDialog(true)}>Join Meeting</Button>
-                        </Card>
-                    )}
                 </div>
 
                 {/* Admin / Add Participant (only visible if we have no participant or implicit permission - actually anyone can add) */}
