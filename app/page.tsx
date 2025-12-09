@@ -7,7 +7,7 @@ import { Header } from "@/components/header";
 
 export default function Home() {
   return (
-    <main className="container mx-auto p-4 md:p-8 max-w-5xl space-y-8">
+    <main className="container mx-auto p-4 md:p-8 max-w-7xl space-y-8">
       <Header />
 
       <TimeControls />

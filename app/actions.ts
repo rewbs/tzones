@@ -4,12 +4,19 @@ import { prisma } from '@/lib/prisma'
 import { nanoid } from 'nanoid'
 import { revalidatePath } from 'next/cache'
 
-export async function createMeeting(title: string) {
+export async function createMeeting(title: string, initialTimezones?: { name: string; timezone: string }[]) {
     const id = nanoid(10)
     await prisma.meeting.create({
         data: {
             id,
             title,
+            participants: initialTimezones ? {
+                create: initialTimezones.map(tz => ({
+                    id: nanoid(10),
+                    name: tz.name,
+                    timezone: tz.timezone,
+                }))
+            } : undefined,
         },
     })
     return id
@@ -84,6 +91,15 @@ export async function updateParticipantTimezone(participantId: string, timezone:
     const participant = await prisma.participant.update({
         where: { id: participantId },
         data: { timezone },
+    })
+    revalidatePath(`/meet/${participant.meetingId}`)
+    return participant
+}
+
+export async function updateParticipantName(participantId: string, name: string) {
+    const participant = await prisma.participant.update({
+        where: { id: participantId },
+        data: { name },
     })
     revalidatePath(`/meet/${participant.meetingId}`)
     return participant

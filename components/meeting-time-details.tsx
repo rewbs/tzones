@@ -41,7 +41,7 @@ export function MeetingTimeDetails({ selectedTime, participants, viewerTimezone,
         <Card className="bg-card/50 backdrop-blur-md border-border h-full">
             <CardHeader className="pb-3">
                 <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">Selected Time</CardTitle>
+                    <CardTitle className="text-lg">Who's Available?</CardTitle>
                     <div className="text-right">
                         <div className="text-sm font-medium text-foreground">
                             {format(displayDate, headerFormat)}

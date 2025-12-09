@@ -61,15 +61,24 @@ export function CityCard({ city, onEdit }: CityCardProps) {
                     </div>
 
                     <div className="text-right">
-                        <div className="text-3xl font-bold font-mono tracking-tight">
-                            {format(localTime, use24Hour ? "HH:mm" : "h:mm a")}
+                        <div className="text-3xl font-bold font-mono tracking-tight whitespace-nowrap">
+                            {use24Hour ? (
+                                format(localTime, "HH:mm")
+                            ) : (
+                                <>
+                                    {format(localTime, "h:mm")}
+                                    <span className={`text-xl ml-1 ${localTime.getHours() < 12 ? 'text-red-400/80' : 'text-blue-400/80'}`}>
+                                        {format(localTime, "a")}
+                                    </span>
+                                </>
+                            )}
                         </div>
                         <div className="text-sm text-muted-foreground">
                             {format(localTime, "EEE, MMM d")}
                         </div>
-                        {isBusiness && (
-                            <div className="text-xs text-emerald-400 mt-1 font-medium">Business Hours</div>
-                        )}
+                        <div className={`text-xs mt-1 font-medium ${isBusiness ? 'text-emerald-400' : 'invisible'}`}>
+                            Business Hours
+                        </div>
                     </div>
                 </div>
 

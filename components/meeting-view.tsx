@@ -22,6 +22,7 @@ import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { AblyProvider } from "./ably-provider"
 import { useMeetingChannel } from "@/hooks/use-meeting-channel"
+import { addRecentMeeting } from "@/lib/recent-meetings"
 
 interface Participant {
     id: string
@@ -65,6 +66,11 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
         now.setHours(now.getHours() + 1)
         setSelectedTime(now)
     }, [])
+
+    // Record this meeting in recent meetings
+    useEffect(() => {
+        addRecentMeeting(meeting.id, meeting.title)
+    }, [meeting.id, meeting.title])
 
     // Handle remote availability updates
     const handleRemoteAvailabilityUpdate = useCallback((remoteParticipantId: string, slots: string[]) => {
@@ -164,10 +170,16 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
                     window.history.replaceState({}, '', window.location.pathname)
                 }
             } else {
-                if (!paramId) setShowJoinDialog(true) // Only show dialog if stored ID was invalid, not if URL param was invalid (silent fail safest?)
+                // Only show dialog if stored ID was invalid AND there are no participants
+                if (!paramId && meeting.participants.length === 0) {
+                    setShowJoinDialog(true)
+                }
             }
         } else {
-            setShowJoinDialog(true)
+            // Only show dialog if there are no pre-populated participants
+            if (meeting.participants.length === 0) {
+                setShowJoinDialog(true)
+            }
         }
     }, [meeting.id, localParticipants])
 
@@ -193,6 +205,14 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
 
     const handleSaveAvailability = async (ranges: { startTime: Date; endTime: Date }[]) => {
         if (!participant) return
+
+        // Update localParticipants so Group Timeline refreshes
+        setLocalParticipants(prev => prev.map(p =>
+            p.id === participant.id
+                ? { ...p, availability: ranges }
+                : p
+        ))
+
         await updateAvailability(participant.id, ranges)
     }
 
@@ -283,6 +303,12 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
             {/* Header */}
             <div className="flex flex-row justify-between items-center gap-2">
                 <div className="flex flex-col gap-2">
+                    <a
+                        href="/"
+                        className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                    >
+                        ← Back to Timezone Comparison
+                    </a>
                     {isEditingTitle ? (
                         <div className="flex items-center gap-2 flex-wrap">
                             <Input
@@ -301,19 +327,11 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
                             </Button>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-2 group">
+                        <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingTitle(true)}>
                             <h1 className="text-2xl md:text-3xl font-bold">{optimisticTitle}</h1>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => setIsEditingTitle(true)}
-                            >
-                                <Pencil className="w-4 h-4 text-muted-foreground" />
-                            </Button>
+                            <Pencil className="w-4 h-4 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity" />
                         </div>
                     )}
-                    <p className="text-muted-foreground text-sm truncate">{meeting.id}</p>
                 </div>
                 <div className="flex items-center gap-2 md:gap-4 flex-wrap">
                     {/* Connection Status */}
@@ -364,6 +382,11 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
                         selectedTime={selectedTime}
                         onTimeChange={setSelectedTime}
                         is24Hour={is24Hour}
+                        onParticipantUpdate={(participantId, updates) => {
+                            setLocalParticipants(prev => prev.map(p =>
+                                p.id === participantId ? { ...p, ...updates } : p
+                            ))
+                        }}
                     />
                     <p className="text-xs text-muted-foreground text-center">
                         Drag the timeline to change the selected time.
@@ -379,16 +402,64 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
 
                 {/* 2. My Availability (Full Width) */}
                 <div>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+                        <div>
+                            <h2 className="text-xl md:text-2xl font-semibold">My Availability</h2>
+                            {participant && (
+                                <p className="text-sm text-muted-foreground">
+                                    Drag to select times you are free. The vertical markers correspond to the selected time above.
+                                </p>
+                            )}
+                        </div>
+                        {localParticipants.length > 0 && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {/* View As / Impersonate Dropdown */}
+                                <div className="flex items-center gap-1 border border-input rounded-md px-2 h-10 bg-background">
+                                    <span className="text-xs text-muted-foreground mr-1">View as:</span>
+                                    <select
+                                        className="bg-transparent text-sm font-medium focus:outline-none max-w-[120px]"
+                                        value={participant?.id || ''}
+                                        onChange={(e) => {
+                                            const newId = e.target.value
+                                            const p = localParticipants.find(p => p.id === newId)
+                                            if (p) {
+                                                setParticipant(p as Participant)
+                                                localStorage.setItem(`meeting_participant_${meeting.id}`, p.id)
+                                            }
+                                        }}
+                                    >
+                                        {!participant && <option value="">Select participant...</option>}
+                                        {localParticipants.map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {participant && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        title="Copy personalized link"
+                                        onClick={() => {
+                                            const url = new URL(window.location.href)
+                                            url.searchParams.set('participantId', participant.id)
+                                            navigator.clipboard.writeText(url.toString())
+                                            toast.success(`Link for ${participant.name} copied!`)
+                                        }}
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     {participant ? (
                         <Card className="bg-card/50 backdrop-blur-md border-border w-full">
                             <CardHeader>
                                 <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
-                                    <div>
-                                        <CardTitle>My Availability</CardTitle>
-                                        <CardDescription>
-                                            Drag to select times you are free. The vertical markers correspond to the selected time above.
-                                        </CardDescription>
-                                    </div>
                                     <div className="flex items-center gap-2 flex-wrap">
                                         {isUpdatingTimezone && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                                         <TimezoneCombobox
@@ -397,43 +468,6 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
                                             className="w-full md:w-[200px]"
                                             disabled={isUpdatingTimezone}
                                         />
-
-                                        {/* Identify / Impersonate Dropdown */}
-                                        <div className="flex items-center gap-1 border border-input rounded-md px-2 h-10 bg-background">
-                                            <span className="text-xs text-muted-foreground mr-1">View as:</span>
-                                            <select
-                                                className="bg-transparent text-sm font-medium focus:outline-none max-w-[120px]"
-                                                value={participant.id}
-                                                onChange={(e) => {
-                                                    const newId = e.target.value
-                                                    const p = meeting.participants.find(p => p.id === newId)
-                                                    if (p) {
-                                                        setParticipant(p as Participant)
-                                                        localStorage.setItem(`meeting_participant_${meeting.id}`, p.id)
-                                                    }
-                                                }}
-                                            >
-                                                {meeting.participants.map(p => (
-                                                    <option key={p.id} value={p.id}>
-                                                        {p.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            title="Copy personalized link"
-                                            onClick={() => {
-                                                const url = new URL(window.location.href)
-                                                url.searchParams.set('participantId', participant.id)
-                                                navigator.clipboard.writeText(url.toString())
-                                                toast.success(`Link for ${participant.name} copied!`)
-                                            }}
-                                        >
-                                            <Copy className="w-4 h-4" />
-                                        </Button>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -463,7 +497,10 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
 
 
 
-                {/* 3. Details Row (3 Columns) */}
+                {/* 3. Selected Time Section Header */}
+                <h2 className="text-xl md:text-2xl font-semibold">Selected Time</h2>
+
+                {/* 4. Details Row (3 Columns) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Col 1: Meeting Details (Who is free/busy) */}
                     <div className="md:col-span-1 h-full">

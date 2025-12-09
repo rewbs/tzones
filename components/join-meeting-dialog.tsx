@@ -53,6 +53,7 @@ export function JoinMeetingDialog({ meetingId, open, onOpenChange, onJoined }: J
         try {
             const participant = await joinMeeting(meetingId, name, timezone)
             onJoined(participant)
+            onOpenChange(false) // Explicitly close the dialog
         } catch (error) {
             console.error("Failed to join meeting:", error)
         } finally {

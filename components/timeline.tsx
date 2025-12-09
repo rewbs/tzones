@@ -25,7 +25,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 const HOUR_WIDTH = 60 // px
 
-function SortableTimelineRow({ city, currentTime, use24Hour, hoursToRender }: any) {
+function SortableTimelineRow({ city, currentTime, use24Hour, hoursToRender, offsetMinutes }: any) {
     const {
         attributes,
         listeners,
@@ -100,6 +100,20 @@ function SortableTimelineRow({ city, currentTime, use24Hour, hoursToRender }: an
                                     <span>{use24Hour ? h : format(blockTime, "h a")}</span>
                                 )}
 
+                                {/* Blue "now" line - show if now falls in this hour cell */}
+                                {(() => {
+                                    const nowOffsetHours = -offsetMinutes / 60
+                                    const isNowInThisHour = i <= nowOffsetHours && nowOffsetHours < i + 1
+                                    if (!isNowInThisHour || offsetMinutes === 0) return null
+                                    const nowPositionInCell = (nowOffsetHours - i) * HOUR_WIDTH
+                                    return (
+                                        <div
+                                            className="absolute top-0 bottom-0 w-0.5 bg-blue-400/60 z-10"
+                                            style={{ left: `${nowPositionInCell}px` }}
+                                        />
+                                    )
+                                })()}
+
                                 {isMidnight && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-yellow-500/50" />}
                             </div>
                         )
@@ -116,6 +130,26 @@ export function Timeline() {
     const [isDraggingTime, setIsDraggingTime] = useState(false)
     const [startX, setStartX] = useState(0)
     const [startOffset, setStartOffset] = useState(0)
+    const [hoursEachSide, setHoursEachSide] = useState(18)
+
+    // Responsive hours - more on wider screens
+    useEffect(() => {
+        const updateHours = () => {
+            const width = window.innerWidth
+            if (width >= 1536) { // 2xl
+                setHoursEachSide(36)
+            } else if (width >= 1280) { // xl
+                setHoursEachSide(28)
+            } else if (width >= 1024) { // lg
+                setHoursEachSide(22)
+            } else {
+                setHoursEachSide(18)
+            }
+        }
+        updateHours()
+        window.addEventListener('resize', updateHours)
+        return () => window.removeEventListener('resize', updateHours)
+    }, [])
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -166,7 +200,7 @@ export function Timeline() {
         }
     }, [isDraggingTime, startX, startOffset, setOffsetMinutes])
 
-    const hoursToRender = Array.from({ length: 25 }, (_, i) => i - 12)
+    const hoursToRender = Array.from({ length: hoursEachSide * 2 + 1 }, (_, i) => i - hoursEachSide)
 
     return (
         <div className="bg-card/50 backdrop-blur-md border border-border rounded-xl overflow-hidden shadow-xl select-none">
@@ -196,12 +230,13 @@ export function Timeline() {
                                 currentTime={currentTime}
                                 use24Hour={use24Hour}
                                 hoursToRender={hoursToRender}
+                                offsetMinutes={offsetMinutes}
                             />
                         ))}
                     </SortableContext>
                 </DndContext>
 
-                {/* Center Line Overlay */}
+                {/* Center Line Overlay - Selected Time (green) */}
                 <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-emerald-500 z-20 pointer-events-none shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
             </div>
         </div>

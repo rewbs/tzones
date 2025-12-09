@@ -3,6 +3,9 @@
 import { useRef, useState, useEffect } from "react"
 import { toZonedTime } from "date-fns-tz"
 import { addHours, format, startOfHour } from "date-fns"
+import { Input } from "@/components/ui/input"
+import { Pencil, Check, X } from "lucide-react"
+import { updateParticipantName } from "@/app/actions"
 
 const HOUR_WIDTH = 40 // px per hour block
 const SIDEBAR_WIDTH = 224 // w-56 = 14rem = 224px
@@ -13,6 +16,7 @@ interface MeetingTimelineProps {
     selectedTime: Date
     onTimeChange: (time: Date) => void
     is24Hour?: boolean
+    onParticipantUpdate?: (participantId: string, updates: { name?: string; timezone?: string }) => void
 }
 
 /**
@@ -29,13 +33,39 @@ function ParticipantRow({
     participant,
     selectedTime,
     hoursToRender,
-    is24Hour
+    is24Hour,
+    onNameUpdate
 }: {
     participant: any
     selectedTime: Date
     hoursToRender: number[]
     is24Hour: boolean
+    onNameUpdate?: (name: string) => void
 }) {
+    const [isEditingName, setIsEditingName] = useState(false)
+    const [editedName, setEditedName] = useState(participant.name)
+    const [isSaving, setIsSaving] = useState(false)
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    const handleSaveName = async () => {
+        if (!editedName.trim() || editedName === participant.name) {
+            setIsEditingName(false)
+            setEditedName(participant.name)
+            return
+        }
+        setIsSaving(true)
+        try {
+            await updateParticipantName(participant.id, editedName)
+            onNameUpdate?.(editedName)
+            setIsEditingName(false)
+        } catch (error) {
+            console.error('Failed to update name', error)
+            setEditedName(participant.name)
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
     const getInitials = (name: string) =>
         name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
 
@@ -60,8 +90,49 @@ function ParticipantRow({
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm border border-primary/20">
                     {getInitials(participant.name)}
                 </div>
-                <div className="flex flex-col justify-center overflow-hidden">
-                    <div className="font-medium text-sm truncate">{participant.name}</div>
+                <div className="flex flex-col justify-center overflow-hidden flex-1">
+                    {isEditingName ? (
+                        <div className="flex items-center gap-1">
+                            <Input
+                                ref={inputRef}
+                                value={editedName}
+                                onChange={(e) => setEditedName(e.target.value)}
+                                className="h-6 text-sm py-0 px-1"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveName()
+                                    if (e.key === 'Escape') {
+                                        setIsEditingName(false)
+                                        setEditedName(participant.name)
+                                    }
+                                }}
+                                autoFocus
+                            />
+                            <button
+                                onClick={handleSaveName}
+                                disabled={isSaving}
+                                className="text-emerald-500 hover:text-emerald-400 p-0.5"
+                            >
+                                <Check className="w-3 h-3" />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsEditingName(false)
+                                    setEditedName(participant.name)
+                                }}
+                                className="text-red-500 hover:text-red-400 p-0.5"
+                            >
+                                <X className="w-3 h-3" />
+                            </button>
+                        </div>
+                    ) : (
+                        <div
+                            className="font-medium text-sm truncate cursor-pointer hover:text-primary flex items-center gap-1 group"
+                            onClick={() => setIsEditingName(true)}
+                        >
+                            {participant.name}
+                            <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+                        </div>
+                    )}
                     <div className="text-xs text-muted-foreground truncate">
                         {participant.timezone}
                     </div>
@@ -165,7 +236,8 @@ export function MeetingTimeline({
     participants,
     selectedTime,
     onTimeChange,
-    is24Hour = false
+    is24Hour = false,
+    onParticipantUpdate
 }: MeetingTimelineProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [isDragging, setIsDragging] = useState(false)
@@ -250,6 +322,7 @@ export function MeetingTimeline({
                         selectedTime={selectedTime}
                         hoursToRender={hoursToRender}
                         is24Hour={is24Hour}
+                        onNameUpdate={(name) => onParticipantUpdate?.(p.id, { name })}
                     />
                 ))}
 
