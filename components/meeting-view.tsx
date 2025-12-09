@@ -374,6 +374,29 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
                             ) : (
                                 format(selectedTime, is24Hour ? "EEEE, MMMM d, HH:mm" : "EEEE, MMMM d, h:mm a")
                             )}
+                            {/* Relative time with hours and minutes precision */}
+                            {(() => {
+                                const now = new Date()
+                                const diffMs = selectedTime.getTime() - now.getTime()
+                                const isPast = diffMs < 0
+                                const absDiffMs = Math.abs(diffMs)
+                                const totalMinutes = Math.floor(absDiffMs / (1000 * 60))
+                                const days = Math.floor(totalMinutes / (60 * 24))
+                                const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
+                                const minutes = totalMinutes % 60
+
+                                let parts: string[] = []
+                                if (days > 0) parts.push(`${days}d`)
+                                if (hours > 0) parts.push(`${hours}h`)
+                                if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`)
+
+                                const relativeStr = parts.join(' ')
+                                return (
+                                    <span className="ml-2 text-blue-400/80">
+                                        ({isPast ? `${relativeStr} ago` : `in ${relativeStr}`})
+                                    </span>
+                                )
+                            })()}
                         </p>
                     </div>
 
@@ -387,6 +410,7 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
                                 p.id === participantId ? { ...p, ...updates } : p
                             ))
                         }}
+                        viewerId={participant?.id}
                     />
                     <p className="text-xs text-muted-foreground text-center">
                         Drag the timeline to change the selected time.
@@ -473,6 +497,7 @@ function MeetingViewInner({ meeting, initialMeeting }: { meeting: Meeting; initi
                             </CardHeader>
                             <CardContent>
                                 <AvailabilityGrid
+                                    key={participant.id}
                                     participantId={participant.id}
                                     initialAvailability={participant.availability}
                                     onSave={handleSaveAvailability}

@@ -10,7 +10,8 @@ import {
     DndContext,
     closestCenter,
     KeyboardSensor,
-    PointerSensor,
+    MouseSensor,
+    TouchSensor,
     useSensor,
     useSensors,
     DragEndEvent
@@ -54,11 +55,15 @@ export function CityList() {
     const [editingCityId, setEditingCityId] = useState<string | null>(null)
 
     const sensors = useSensors(
-        useSensor(PointerSensor, {
-            // Require 8px of movement before starting drag
-            // This allows clicks to work normally
+        useSensor(MouseSensor, {
             activationConstraint: {
-                distance: 8,
+                distance: 10,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -97,7 +102,7 @@ export function CityList() {
                     items={cities.map(c => c.id)}
                     strategy={rectSortingStrategy}
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 md:gap-4">
                         {cities.map(city => (
                             <SortableCityCard
                                 key={city.id}
@@ -109,11 +114,11 @@ export function CityList() {
                         {/* Add Button Card - Not sortable, always at end */}
                         <Button
                             variant="outline"
-                            className="h-full min-h-[180px] border-dashed border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-slate-700 flex flex-col gap-2"
+                            className="h-full min-h-[65px] md:min-h-[180px] border-dashed border-slate-800 bg-slate-900/20 hover:bg-slate-900/40 hover:border-slate-700 flex flex-col gap-0.5 items-center justify-center p-1"
                             onClick={handleAdd}
                         >
-                            <Plus className="h-8 w-8 opacity-50" />
-                            <span>Add City</span>
+                            <Plus className="h-4 w-4 md:h-8 md:w-8 opacity-50" />
+                            <span className="text-[9px] md:text-sm">Add City</span>
                         </Button>
                     </div>
                 </SortableContext>

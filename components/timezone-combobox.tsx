@@ -57,7 +57,7 @@ export function TimezoneCombobox({ value, onValueChange, placeholder = "Select t
                     className={cn("justify-between", className)}
                     disabled={disabled}
                 >
-                    {value || placeholder}
+                    <span className="truncate">{value || placeholder}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>

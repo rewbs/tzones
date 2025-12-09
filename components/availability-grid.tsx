@@ -5,6 +5,7 @@ import { addDays, format, startOfDay, addMinutes, isSameMinute, startOfMinute } 
 import { fromZonedTime, toZonedTime } from "date-fns-tz"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Hand, MousePointer2, Pen } from "lucide-react"
 
 interface AvailabilityGridProps {
     participantId: string
@@ -47,6 +48,9 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
 
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
+    // Selection Mode (Toggle): False = View/TimeSet, True = Edit/Availability
+    const [isSelectionMode, setIsSelectionMode] = useState(false)
+
     // Sync Ref
     useEffect(() => {
         selectedSlotsRef.current = selectedSlots
@@ -54,9 +58,6 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
 
     // Initialize state from props - Logic Refined to avoid Flash
     useEffect(() => {
-        // If we have unsaved changes, we NEVER overwrite local state with props *unless* 
-        // the props have caught up to our local state (which we handle in the other effect).
-        // This prevents the "flash" where props are momentarily stale after a save.
         if (hasUnsavedChanges) return
 
         const initial = new Set<string>()
@@ -65,7 +66,6 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
                 const start = new Date(range.startTime)
                 const end = new Date(range.endTime)
                 let current = start
-                // Iterate in 30-minute chunks
                 while (current < end) {
                     initial.add(current.toISOString())
                     current = addMinutes(current, 30)
@@ -73,14 +73,12 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
             })
         }
 
-        // Only update if actually different
         if (!areSetsEqual(initial, selectedSlots)) {
             setSelectedSlots(initial)
         }
     }, [initialAvailability, hasUnsavedChanges])
 
-    // NEW: Clears 'hasUnsavedChanges' ONLY when prop data matches local data.
-    // This "unlocks" the component to receive future updates from the server.
+    // Clear unsaved changes when consistent
     useEffect(() => {
         const initial = new Set<string>()
         if (initialAvailability) {
@@ -109,7 +107,6 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
             p.availability.forEach(range => {
                 let current = new Date(range.startTime)
                 const end = new Date(range.endTime)
-                // align to 30 min just in case
                 if (current.getMinutes() % 30 !== 0) {
                     current.setMinutes(current.getMinutes() < 30 ? 0 : 30, 0, 0)
                 }
@@ -134,54 +131,22 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
             const slotsToSave = new Set(selectedSlotsRef.current)
             await handleSave(slotsToSave)
 
-            // Broadcast to other clients via Ably
             if (onBroadcast) {
                 onBroadcast(Array.from(slotsToSave))
             }
 
             setSaveStatus("saved")
-
-            // WE DO NOT CLEAR 'hasUnsavedChanges' HERE ANYMORE.
-            // We wait for the prop to catch up in the effect above.
-
             setTimeout(() => setSaveStatus("idle"), 2000)
-        }, 1000) // Debounce 1s
+        }, 1000)
 
         return () => clearTimeout(timer)
     }, [selectedSlots, hasUnsavedChanges, isDragging, onBroadcast])
 
-    // Calculate Heatmap
-    useEffect(() => {
-        const newHeatmap: Record<string, number> = {}
-        const otherParticipants = participants.filter(p => p.id !== participantId)
-
-        otherParticipants.forEach(p => {
-            p.availability.forEach(range => {
-                let current = new Date(range.startTime)
-                const end = new Date(range.endTime)
-                // align to 30 min just in case
-                if (current.getMinutes() % 30 !== 0) {
-                    current.setMinutes(current.getMinutes() < 30 ? 0 : 30, 0, 0)
-                }
-
-                while (current < end) {
-                    const key = current.toISOString()
-                    newHeatmap[key] = (newHeatmap[key] || 0) + 1
-                    current = addMinutes(current, 30)
-                }
-            })
-        })
-        setHeatmap(newHeatmap)
-    }, [participants, participantId])
-
     // Helper to get time for coordinates
     const getTimeForCoord = (dayIdx: number, timeIdx: number) => {
-        // Calculate the "Visual Start of Day" in the target timezone
         const now = new Date()
         const zonedNow = toZonedTime(now, timezone)
         const zonedTodayStr = format(zonedNow, "yyyy-MM-dd")
-
-        // This gives us the Absolute Time (UTC) that represents 00:00 in the target timezone for "Today"
         const absoluteStartOfToday = fromZonedTime(`${zonedTodayStr} 00:00`, timezone)
 
         const day = addDays(absoluteStartOfToday, dayIdx)
@@ -192,7 +157,17 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
     const hasMoved = useRef(false)
 
     const handleMouseDown = (dayIndex: number, timeIndex: number) => {
-        startDrag(dayIndex, timeIndex)
+        if (isSelectionMode) {
+            startDrag(dayIndex, timeIndex)
+        }
+    }
+
+    const handleClick = (dayIndex: number, timeIndex: number) => {
+        // Only set time if we are NOT in edit/selection mode
+        if (!isSelectionMode && onTimeChange) {
+            const time = getTimeForCoord(dayIndex, timeIndex)
+            onTimeChange(time)
+        }
     }
 
     const startDrag = (dayIndex: number, timeIndex: number) => {
@@ -211,13 +186,26 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
 
     // Touch handlers for mobile
     const handleTouchStart = (e: React.TouchEvent, dayIndex: number, timeIndex: number) => {
-        e.preventDefault() // Prevent scroll
+        if (!isSelectionMode) return // Allow scroll / tap to set time
+        e.preventDefault() // Prevent scroll since we are selecting
         startDrag(dayIndex, timeIndex)
     }
 
     const handleTouchMove = (e: React.TouchEvent) => {
+        // Only stop propagation/default if we are NOT on a header in selection mode
+        if (isSelectionMode) {
+            const target = e.target as HTMLElement;
+            // Check if touch started on a header cell
+            const isHeader = target.closest('.grid-header-cell');
+            if (!isHeader) {
+                e.preventDefault()
+            }
+        }
+
         if (!isDragging) return
-        e.preventDefault()
+
+        // If we are dragging, we already prevented default above or it was a valid drag start
+        // e.preventDefault() 
 
         const touch = e.touches[0]
         const element = document.elementFromPoint(touch.clientX, touch.clientY)
@@ -251,13 +239,20 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
 
         // Check for static click (no movement across cells)
         if (!hasMoved.current && dragStart.dayIndex === dragCurrent.dayIndex && dragStart.timeIndex === dragCurrent.timeIndex) {
-            // It was a click!
-            if (onTimeChange) {
-                const time = getTimeForCoord(dragStart.dayIndex, dragStart.timeIndex)
-                onTimeChange(time)
+            // Static click in Edit Mode: Toggle the single slot
+            const time = getTimeForCoord(dragStart.dayIndex, dragStart.timeIndex)
+            const key = time.toISOString()
+            const newSlots = new Set(selectedSlots)
+
+            if (newSlots.has(key)) {
+                newSlots.delete(key)
+            } else {
+                newSlots.add(key)
             }
 
-            // Abort save/edit
+            setSelectedSlots(newSlots)
+            setHasUnsavedChanges(true)
+
             setIsDragging(false)
             setDragStart(null)
             setDragCurrent(null)
@@ -294,7 +289,6 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
     const handleSave = async (slots: Set<string>) => {
         const ranges: { startTime: Date; endTime: Date }[] = []
 
-        // Convert slots back to ranges
         const sortedSlots = Array.from(slots).sort()
         if (sortedSlots.length > 0) {
             let currentStart = new Date(sortedSlots[0])
@@ -303,10 +297,8 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
             for (let i = 1; i < sortedSlots.length; i++) {
                 const slotTime = new Date(sortedSlots[i])
                 if (slotTime.getTime() === currentEnd.getTime()) {
-                    // Contiguous
                     currentEnd = addMinutes(slotTime, 30)
                 } else {
-                    // Break
                     ranges.push({ startTime: currentStart, endTime: currentEnd })
                     currentStart = slotTime
                     currentEnd = addMinutes(slotTime, 30)
@@ -318,7 +310,6 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
         await onSave(ranges)
     }
 
-    // Helper to check if a slot is in the pending drag area
     const isSlotInPendingDrag = (dayIndex: number, timeIndex: number) => {
         if (!isDragging || !dragStart || !dragCurrent) return false
 
@@ -335,18 +326,14 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
         )
     }
 
-    // Prepare Grid Data
-    // We need to calculate 'days' based on the timezone, so headers are correct
     const now = new Date()
     const zonedNow = toZonedTime(now, timezone)
     const zonedTodayStr = format(zonedNow, "yyyy-MM-dd")
     const absoluteStartOfToday = fromZonedTime(`${zonedTodayStr} 00:00`, timezone)
 
     const days = Array.from({ length: 7 }, (_, i) => addDays(absoluteStartOfToday, i))
-    const slots = Array.from({ length: 48 }, (_, i) => i) // 0..47 for 30m slots
+    const slots = Array.from({ length: 48 }, (_, i) => i)
 
-    // Helper to calculate ranges for a specific day for rendering overlay (Visual ONLY)
-    // Now we merge pending state into this visualization on the fly
     const getRangesForDay = (day: Date, dayIndex: number) => {
         const ranges: { startSlot: number, endSlot: number, startTime: Date, endTime: Date }[] = []
         let currentRange: { startSlot: number, endSlot: number, startTime: Date, endTime: Date } | null = null
@@ -357,7 +344,6 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
             const isPersisted = selectedSlots.has(key)
             const isPending = isSlotInPendingDrag(dayIndex, i)
 
-            // Determine effective state for this slot
             let isEffectiveSelected = isPersisted
             if (isPending) {
                 isEffectiveSelected = dragMode === "add" ? true : false
@@ -383,7 +369,7 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
 
     return (
         <div
-            className="space-y-4 select-none touch-none"
+            className="space-y-4 select-none"
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onTouchEnd={handleTouchEnd}
@@ -397,39 +383,58 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
                         {hasUnsavedChanges && saveStatus === "idle" && <span className="text-amber-500">Unsaved changes...</span>}
                     </div>
                 </div>
+
+                {/* Edit Mode Toggle */}
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground mr-1 hidden sm:inline">
+                        {isSelectionMode ? "Tap/Drag to Edit" : "Tap to Set Time"}
+                    </span>
+                    <Button
+                        size="sm"
+                        variant={isSelectionMode ? "default" : "outline"}
+                        onClick={() => setIsSelectionMode(!isSelectionMode)}
+                        className="h-8 gap-2"
+                    >
+                        {isSelectionMode ? <Pen className="h-3 w-3" /> : <Hand className="h-3 w-3" />}
+                        {isSelectionMode ? "Editing" : "Viewing"}
+                    </Button>
+                </div>
             </div>
 
-            <div className="relative overflow-x-auto border border-border rounded-lg bg-card/50">
-                <div className="grid grid-cols-[80px_repeat(48,minmax(16px,1fr))] md:grid-cols-[100px_repeat(48,minmax(20px,1fr))] min-w-[900px] md:min-w-[1200px]">
-                    {/* Header Row (Row 1) */}
-                    <div className="p-2 border-b border-r border-border bg-muted/50 font-medium text-sm sticky left-0 z-20 col-span-1" style={{ gridRow: 1 }}>
+            <div
+                className="relative overflow-x-auto border border-border rounded-lg bg-card/50"
+            >
+                <div className="grid grid-cols-[80px_repeat(48,minmax(16px,1fr))] md:grid-cols-[100px_repeat(48,minmax(20px,1fr))] min-w-[900px] md:min-w-[1200px] cursor-default">
+                    {/* Header Row */}
+                    <div className="grid-header-cell p-2 border-b border-r border-border bg-muted/50 font-medium text-sm sticky left-0 z-50 col-span-1" style={{ gridRow: 1 }}>
                         Date / Time
                     </div>
                     {Array.from({ length: 24 }).map((_, h) => {
-                        let label = h.toString()
+                        let hourLabel = h.toString()
+                        let periodLabel = ''
                         if (!is24Hour) {
                             const date = new Date()
                             date.setHours(h, 0, 0, 0)
-                            label = format(date, "h a")
+                            hourLabel = format(date, "h")
+                            periodLabel = format(date, "a")
                         }
                         return (
-                            <div key={h} className="col-span-2 p-2 border-b border-border bg-muted/50 text-xs text-center text-muted-foreground border-r last:border-r-0" style={{ gridRow: 1 }}>
-                                {label}
+                            <div key={h} className="grid-header-cell col-span-2 p-2 border-b border-border bg-muted/50 text-xs text-center text-muted-foreground border-r last:border-r-0 flex flex-col items-center justify-center" style={{ gridRow: 1 }}>
+                                <span>{hourLabel}</span>
+                                {!is24Hour && <span className="text-[10px]">{periodLabel}</span>}
                             </div>
                         )
                     })}
 
                     {days.map((day, dayIdx) => {
                         const rowIdx = dayIdx + 2
-
-                        // Render Overlay Ranges first (so they are "behind" pointer events of cells if necessary, but we put them on top with pointer-events-none)
                         const ranges = getRangesForDay(day, dayIdx)
 
                         return (
                             <Fragment key={day.toISOString()}>
                                 {/* Row Header */}
                                 <div
-                                    className="p-1 md:p-2 border-r border-border bg-card font-medium text-xs sticky left-0 z-10 flex flex-col justify-center border-b h-10 md:h-12"
+                                    className="grid-header-cell p-1 md:p-2 border-r border-border bg-card font-medium text-xs sticky left-0 z-40 flex flex-col justify-center border-b h-10 md:h-12"
                                     style={{ gridRow: rowIdx, gridColumn: 1 }}
                                 >
                                     <span>{format(day, "EEE")}</span>
@@ -445,8 +450,6 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
                                         addMinutes(time, 30).getTime() > selectedTime.getTime()
                                     )
 
-                                    // Visual state calculation for this cell specifically for rendering classes (e.g. hover)
-                                    // Note: Actual coloring is handled by 'ranges' overlay, but we need this for heatmap text color logic
                                     const isPersisted = selectedSlots.has(time.toISOString())
                                     const isPending = isSlotInPendingDrag(dayIdx, i)
                                     let isEffectiveSelected = isPersisted
@@ -462,39 +465,34 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
                                             data-day={dayIdx}
                                             data-time={i}
                                             onMouseDown={() => handleMouseDown(dayIdx, i)}
+                                            onClick={() => handleClick(dayIdx, i)}
                                             onMouseEnter={() => handleMouseEnter(dayIdx, i)}
                                             onTouchStart={(e) => handleTouchStart(e, dayIdx, i)}
                                             className={cn(
-                                                "border-b border-border/30 h-10 md:h-12 cursor-pointer transition-colors relative",
+                                                "border-b border-border/30 h-10 md:h-12 transition-colors relative",
+                                                isSelectionMode ? "cursor-crosshair touch-none" : "cursor-pointer",
                                                 isHourStart ? "border-r border-border/50" : "border-r border-border/30 border-dashed",
-                                                // Hover effect
                                                 !isEffectiveSelected && "hover:bg-emerald-500/10",
-                                                // Weekend Highlight: Slightly darker/warmer background if not selected
                                                 !isEffectiveSelected && isWeekend && "bg-orange-50/30 dark:bg-orange-900/10"
                                             )}
                                             style={{
                                                 gridRow: rowIdx,
                                                 gridColumn: i + 2,
-                                                // Heatmap background (only if not selected)
                                                 backgroundColor: !isEffectiveSelected && heatmap[time.toISOString()]
-                                                    ? `rgba(99, 102, 241, ${Math.min(heatmap[time.toISOString()] * 0.15, 0.6)})` // Indigo with varying opacity
+                                                    ? `rgba(99, 102, 241, ${Math.min(heatmap[time.toISOString()] * 0.15, 0.6)})`
                                                     : undefined
                                             }}
                                         >
-                                            {/* Heatmap Count Indicator (optional, keep it subtle) */}
+                                            {/* Heatmap Count */}
                                             {(() => {
                                                 const othersCount = heatmap[time.toISOString()] || 0
                                                 const totalCount = othersCount + (isEffectiveSelected ? 1 : 0)
-
                                                 if (totalCount === 0) return null
-
                                                 return (
                                                     <div className="absolute bottom-0 right-1 pointer-events-none z-20">
                                                         <span className={cn(
                                                             "text-[10px] font-medium transition-colors",
-                                                            isEffectiveSelected
-                                                                ? "text-white/90"
-                                                                : "text-indigo-900/40 dark:text-indigo-100/40"
+                                                            isEffectiveSelected ? "text-white/90" : "text-indigo-900/40 dark:text-indigo-100/40"
                                                         )}>
                                                             {totalCount}
                                                         </span>
@@ -504,19 +502,35 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
 
                                             {/* Highlight for Selected Meeting Time */}
                                             {isCurrentSelected && (
-                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 animate-pulse z-30" />
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-700 animate-pulse z-30" />
                                             )}
+                                            {/* Now marker */}
+                                            {(() => {
+                                                const now = new Date()
+                                                const timeStart = time.getTime()
+                                                const timeEnd = addMinutes(time, 30).getTime()
+                                                if (now.getTime() >= timeStart && now.getTime() < timeEnd) {
+                                                    const fractionIn = (now.getTime() - timeStart) / (timeEnd - timeStart)
+                                                    return (
+                                                        <div
+                                                            className="absolute top-0 bottom-0 w-0.5 bg-blue-400/60 z-25"
+                                                            style={{ left: `${fractionIn * 100}%` }}
+                                                        />
+                                                    )
+                                                }
+                                                return null
+                                            })()}
                                         </div>
                                     )
                                 })}
 
-                                {/* Overlay Ranges (Visuals) */}
+                                {/* Overlay Ranges */}
+                                {/* Overlay Ranges: Layer 1 - Backgrounds (Behind Heatmap) */}
                                 {ranges.map((range, rIdx) => (
                                     <div
-                                        key={`range-${rIdx}`}
+                                        key={`range-bg-${rIdx}`}
                                         className={cn(
-                                            "text-white text-[10px] flex items-center px-1 font-medium overflow-hidden whitespace-nowrap rounded-sm h-10 mt-1 pointer-events-none z-10 shadow-sm mx-px",
-                                            // During drag, make the "pending" ranges slightly distinct?
+                                            "rounded-sm h-10 mt-1 pointer-events-none z-10 shadow-sm mx-px",
                                             isDragging ? "bg-emerald-500/90" : "bg-emerald-500"
                                         )}
                                         style={{
@@ -525,12 +539,38 @@ export function AvailabilityGrid({ participantId, initialAvailability = [], onSa
                                             gridRowStart: rowIdx,
                                             gridRowEnd: rowIdx + 1
                                         }}
+                                    />
+                                ))}
+
+                                {/* Overlay Ranges: Layer 2 - Text Labels (On Top of Everything) */}
+                                {ranges.map((range, rIdx) => (
+                                    <div
+                                        key={`range-lbl-${rIdx}`}
+                                        className="flex items-center px-1 overflow-hidden whitespace-nowrap h-10 mt-1 pointer-events-none z-30 mx-px bg-transparent"
+                                        style={{
+                                            gridColumnStart: range.startSlot + 2,
+                                            gridColumnEnd: range.endSlot + 2,
+                                            gridRowStart: rowIdx,
+                                            gridRowEnd: rowIdx + 1
+                                        }}
                                     >
-                                        {range.endSlot - range.startSlot > 2 ? (
-                                            <>{format(range.startTime, "h:mm a")} - {format(range.endTime, "h:mm a")}</>
-                                        ) : (
-                                            range.endSlot - range.startSlot > 1 ? format(range.startTime, "h:mm") : ""
-                                        )}
+                                        {(() => {
+                                            const durationSlots = range.endSlot - range.startSlot
+                                            let text = ""
+                                            if (durationSlots > 2) {
+                                                text = `${format(range.startTime, "h:mm a")} - ${format(range.endTime, "h:mm a")}`
+                                            } else if (durationSlots > 1) {
+                                                text = format(range.startTime, "h:mm")
+                                            }
+
+                                            if (!text) return null
+
+                                            return (
+                                                <span className="text-white text-[10px] font-medium bg-black/40 px-1.5 py-0.5 rounded shadow-sm">
+                                                    {text}
+                                                </span>
+                                            )
+                                        })()}
                                     </div>
                                 ))}
                             </Fragment>

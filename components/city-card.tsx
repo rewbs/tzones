@@ -38,55 +38,122 @@ export function CityCard({ city, onEdit }: CityCardProps) {
         <Card className={`relative overflow-hidden border-border bg-card/40 backdrop-blur transition-all hover:border-sidebar-border group
       ${isDay ? "shadow-[0_0_30px_-10px_rgba(253,224,71,0.1)]" : "shadow-[0_0_30px_-10px_rgba(99,102,241,0.1)]"}
     `}>
-            <CardHeader className="flex flex-row items-start justify-between pb-2 space-y-0">
-                <div className="space-y-1">
-                    <CardTitle className="text-lg font-medium leading-none">{city.name}</CardTitle>
-                    <p className="text-xs text-muted-foreground">{city.timezone}</p>
+            {/* Desktop View */}
+            <div className="hidden md:block">
+                <CardHeader className="flex flex-row items-start justify-between pb-2 space-y-0">
+                    <div className="space-y-1">
+                        <CardTitle className="text-lg font-medium leading-none">{city.name}</CardTitle>
+                        <p className="text-xs text-muted-foreground">{city.timezone}</p>
+                    </div>
+                    <div className="text-2xl">
+                        {isDay ? "☀️" : "🌙"}
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-between mt-4">
+                        {/* Clock */}
+                        <div className="w-16 h-16 relative opacity-80">
+                            <svg viewBox="0 0 100 100" className="w-full h-full">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/50" />
+                                <line x1="50" y1="50" x2="50" y2="25" stroke="currentColor" strokeWidth="4" strokeLinecap="round" transform={`rotate(${hourDeg} 50 50)`} className="text-foreground" />
+                                <line x1="50" y1="50" x2="50" y2="15" stroke="currentColor" strokeWidth="3" strokeLinecap="round" transform={`rotate(${minuteDeg} 50 50)`} className="text-muted-foreground" />
+                                <line x1="50" y1="50" x2="50" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" transform={`rotate(${secondDeg} 50 50)`} className="text-red-500" />
+                                <circle cx="50" cy="50" r="3" fill="currentColor" className="text-muted-foreground" />
+                            </svg>
+                        </div>
+
+                        <div className="text-right">
+                            <div className="text-3xl font-bold font-mono tracking-tight whitespace-nowrap">
+                                {use24Hour ? (
+                                    format(localTime, "HH:mm")
+                                ) : (
+                                    <>
+                                        {format(localTime, "h:mm")}
+                                        <span className={`text-xl ml-1 ${localTime.getHours() < 12 ? 'text-red-400/80' : 'text-blue-400/80'}`}>
+                                            {format(localTime, "a")}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                                {format(localTime, "EEE, MMM d")}
+                            </div>
+                            <div className={`text-xs mt-1 font-medium ${isBusiness ? 'text-emerald-400' : 'invisible'}`}>
+                                Business Hours
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Day Progress Bar */}
+                    <div className="mt-6 relative h-2 bg-muted rounded-full overflow-hidden w-full">
+                        {/* Gradient Background */}
+                        <div
+                            className="absolute inset-0 w-full h-full opacity-80"
+                            style={{
+                                background: `linear-gradient(90deg, 
+                                    #0f172a 0%, 
+                                    #1e293b 20%, 
+                                    #60a5fa 25%, 
+                                    #10b981 37.5%, 
+                                    #10b981 70.8%, 
+                                    #f97316 80%, 
+                                    #0f172a 95%
+                                )`
+                            }}
+                        />
+
+                        {/* Current Time Indicator */}
+                        <div
+                            className="absolute top-0 bottom-0 w-1.5 bg-foreground shadow-[0_0_8px_rgba(255,255,255,0.8)] rounded-full z-10"
+                            style={{
+                                left: `${((localTime.getHours() * 60 + localTime.getMinutes()) / 1440) * 100}%`,
+                                transform: 'translateX(-50%)'
+                            }}
+                        />
+                    </div>
+                </CardContent>
+            </div>
+
+            {/* Mobile Compact View (Mini Tile) */}
+            <div className="flex flex-col p-1.5 md:hidden relative h-[65px] justify-between overflow-hidden">
+                <div className="flex justify-between items-start">
+                    <div className="font-semibold text-[10px] leading-tight text-muted-foreground truncate w-[90%] uppercase tracking-wider pl-0.5">{city.name}</div>
+                    <div className="text-[10px] absolute top-1.5 right-1.5 opacity-40 scale-75 origin-top-right">{isDay ? "☀️" : "🌙"}</div>
                 </div>
-                <div className="text-2xl">
-                    {isDay ? "☀️" : "🌙"}
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center justify-between mt-4">
-                    {/* Clock */}
-                    <div className="w-16 h-16 relative opacity-80">
+
+                <div className="flex items-end mt-0.5 pl-0.5 z-10">
+                    {/* Micro Analog Clock */}
+                    <div className="w-3.5 h-3.5 mr-1 mb-0.5 opacity-70 flex-shrink-0">
                         <svg viewBox="0 0 100 100" className="w-full h-full">
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/50" />
-                            <line x1="50" y1="50" x2="50" y2="25" stroke="currentColor" strokeWidth="4" strokeLinecap="round" transform={`rotate(${hourDeg} 50 50)`} className="text-foreground" />
-                            <line x1="50" y1="50" x2="50" y2="15" stroke="currentColor" strokeWidth="3" strokeLinecap="round" transform={`rotate(${minuteDeg} 50 50)`} className="text-muted-foreground" />
-                            <line x1="50" y1="50" x2="50" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" transform={`rotate(${secondDeg} 50 50)`} className="text-red-500" />
-                            <circle cx="50" cy="50" r="3" fill="currentColor" className="text-muted-foreground" />
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted-foreground/30" />
+                            <line x1="50" y1="50" x2="50" y2="25" stroke="currentColor" strokeWidth="8" strokeLinecap="round" transform={`rotate(${hourDeg} 50 50)`} className="text-foreground" />
+                            <line x1="50" y1="50" x2="50" y2="15" stroke="currentColor" strokeWidth="6" strokeLinecap="round" transform={`rotate(${minuteDeg} 50 50)`} className="text-muted-foreground" />
                         </svg>
                     </div>
 
-                    <div className="text-right">
-                        <div className="text-3xl font-bold font-mono tracking-tight whitespace-nowrap">
-                            {use24Hour ? (
-                                format(localTime, "HH:mm")
-                            ) : (
-                                <>
-                                    {format(localTime, "h:mm")}
-                                    <span className={`text-xl ml-1 ${localTime.getHours() < 12 ? 'text-red-400/80' : 'text-blue-400/80'}`}>
-                                        {format(localTime, "a")}
-                                    </span>
-                                </>
-                            )}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                            {format(localTime, "EEE, MMM d")}
-                        </div>
-                        <div className={`text-xs mt-1 font-medium ${isBusiness ? 'text-emerald-400' : 'invisible'}`}>
-                            Business Hours
-                        </div>
+                    <div className="text-lg font-bold font-mono tracking-tighter leading-none text-foreground flex items-baseline">
+                        {use24Hour ? (
+                            format(localTime, "HH:mm")
+                        ) : (
+                            <span className="flex items-baseline">
+                                {format(localTime, "h:mm")}
+                                <span className={`text-[9px] ml-0.5 font-sans font-medium ${localTime.getHours() < 12 ? 'text-red-400/80' : 'text-blue-400/80'}`}>
+                                    {format(localTime, "a").toLowerCase()}
+                                </span>
+                            </span>
+                        )}
                     </div>
                 </div>
 
-                {/* Day Progress Bar */}
-                <div className="mt-6 relative h-2 bg-muted rounded-full overflow-hidden w-full">
+                <div className="text-[8px] text-muted-foreground -mt-1 truncate opacity-70 pl-0.5 mb-1">
+                    {format(localTime, "EEE, MMM d")}
+                </div>
+
+                {/* Micro Day Progress Bar */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted w-full">
                     {/* Gradient Background */}
                     <div
-                        className="absolute inset-0 w-full h-full opacity-80"
+                        className="absolute inset-0 w-full h-full opacity-60"
                         style={{
                             background: `linear-gradient(90deg, 
                                 #0f172a 0%, 
@@ -99,17 +166,15 @@ export function CityCard({ city, onEdit }: CityCardProps) {
                             )`
                         }}
                     />
-
                     {/* Current Time Indicator */}
                     <div
-                        className="absolute top-0 bottom-0 w-1.5 bg-foreground shadow-[0_0_8px_rgba(255,255,255,0.8)] rounded-full z-10"
+                        className="absolute top-0 bottom-0 w-0.5 bg-foreground shadow-[0_0_4px_rgba(255,255,255,0.8)] z-10"
                         style={{
                             left: `${((localTime.getHours() * 60 + localTime.getMinutes()) / 1440) * 100}%`,
-                            transform: 'translateX(-50%)'
                         }}
                     />
                 </div>
-            </CardContent>
+            </div>
 
             {/* Actions */}
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">

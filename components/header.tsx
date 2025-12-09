@@ -8,6 +8,7 @@ import { Loader2, Plus, Clock, ChevronDown } from "lucide-react"
 import { ModeToggle } from "@/components/mode-toggle"
 import { useTime } from "@/components/time-provider"
 import { getRecentMeetings, addRecentMeeting, RecentMeeting } from "@/lib/recent-meetings"
+import { getRandomMeetingName } from "@/lib/random-nouns"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -34,8 +35,10 @@ export function Header() {
                 name: city.name,
                 timezone: city.timezone,
             }))
-            const id = await createMeeting("New Meeting", initialTimezones)
-            addRecentMeeting(id, "New Meeting")
+
+            const meetingName = getRandomMeetingName()
+            const id = await createMeeting(meetingName, initialTimezones)
+            addRecentMeeting(id, meetingName)
             router.push(`/meet/${id}`)
         } catch (error) {
             console.error("Failed to create meeting", error)
@@ -72,7 +75,7 @@ export function Header() {
                                 <ChevronDown className="h-3 w-3" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-64">
+                        <DropdownMenuContent align="end" className="w-64 bg-card/95 backdrop-blur-md">
                             {recentMeetings.map(meeting => (
                                 <DropdownMenuItem
                                     key={meeting.id}

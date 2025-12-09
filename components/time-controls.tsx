@@ -105,47 +105,52 @@ export function TimeControls() {
         <div className="bg-card/50 backdrop-blur-md border border-border rounded-xl p-6 shadow-xl">
             <div className="flex flex-col gap-6">
                 {/* Top Row: Date, Reset, Timezone, Format */}
-                <div className="flex flex-wrap gap-4 items-center justify-between">
-                    <div className="flex flex-wrap gap-2 items-center">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-[240px] justify-start text-left font-normal bg-background/50 border-input",
-                                        !currentTime && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {currentTime ? format(currentTime, "PPP HH:mm") : <span>Pick a date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={currentTime}
-                                    onSelect={handleDateSelect}
-                                    initialFocus
+                {/* Top Row: Date, Reset, Timezone, Format */}
+                <div className="flex items-center gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0 scrollbar-hide">
+                    {/* Date Picker */}
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-9 md:w-[240px] flex-none justify-center md:justify-start text-left font-normal bg-background/50 border-input px-0 md:px-3",
+                                    !currentTime && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="h-4 w-4 md:mr-2" />
+                                <span className="truncate text-xs md:text-sm hidden md:inline">
+                                    {currentTime ? format(currentTime, "PPP HH:mm") : "Pick date"}
+                                </span>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={currentTime}
+                                onSelect={handleDateSelect}
+                                initialFocus
+                            />
+                            <div className="p-3 border-t border-border bg-muted/50">
+                                <Label className="text-xs mb-2 block">Time</Label>
+                                <input
+                                    type="time"
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={currentTime ? format(currentTime, "HH:mm") : ""}
+                                    onChange={handleTimeChange}
                                 />
-                                <div className="p-3 border-t border-border bg-muted/50">
-                                    <Label className="text-xs mb-2 block">Time</Label>
-                                    <input
-                                        type="time"
-                                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                        value={currentTime ? format(currentTime, "HH:mm") : ""}
-                                        onChange={handleTimeChange}
-                                    />
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
 
-                        <Button variant="outline" size="icon" onClick={resetTime} disabled={offsetMinutes === 0} title="Reset to Now">
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-1 flex-none">
+                        <Button variant="outline" size="icon" onClick={resetTime} disabled={offsetMinutes === 0} title="Reset to Now" className="h-9 w-9">
                             <RotateCcw className="h-4 w-4" />
                         </Button>
 
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" size="icon" title="Share">
+                                <Button variant="outline" size="icon" title="Share" className="h-9 w-9">
                                     <Share2 className="h-4 w-4" />
                                 </Button>
                             </PopoverTrigger>
@@ -153,20 +158,22 @@ export function TimeControls() {
                                 <SharePopover date={currentTime || new Date()} cities={cities} />
                             </PopoverContent>
                         </Popover>
-
-                        <div className="flex items-center gap-2 ml-2">
-                            <Label className="text-xs text-muted-foreground hidden md:block">Your Location:</Label>
-                            <TimezoneCombobox
-                                value={userTimezone}
-                                onValueChange={setUserTimezone}
-                                className="w-[200px] bg-background/50 border-input"
-                            />
-                        </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <Switch id="24h-mode" checked={use24Hour} onCheckedChange={setUse24Hour} />
-                        <Label htmlFor="24h-mode">24-Hour</Label>
+                    {/* Timezone */}
+                    <div className="flex items-center gap-2 flex-none">
+                        <Label className="text-xs text-muted-foreground hidden md:block">Your Location:</Label>
+                        <TimezoneCombobox
+                            value={userTimezone}
+                            onValueChange={setUserTimezone}
+                            className="w-[110px] md:w-[200px] bg-background/50 border-input text-xs"
+                        />
+                    </div>
+
+                    {/* 24h Toggle */}
+                    <div className="flex items-center space-x-2 flex-none ml-auto md:ml-0">
+                        <Switch id="24h-mode" checked={use24Hour} onCheckedChange={setUse24Hour} className="scale-90" />
+                        <Label htmlFor="24h-mode" className="hidden md:block whitespace-nowrap">24-Hour</Label>
                     </div>
                 </div>
 
@@ -175,7 +182,13 @@ export function TimeControls() {
                     <div className="flex justify-between text-sm text-muted-foreground">
                         <span>{getRelativeTime()}</span>
                         <span className="font-mono text-emerald-500 dark:text-emerald-400">
-                            {format(currentTime, use24Hour ? "HH:mm" : "h:mm a")}
+                            {/* Mobile: Show Date + Time (since date picker hidden). Desktop: Show Time only. */}
+                            <span className="md:hidden">
+                                {format(currentTime, use24Hour ? "MMM d, HH:mm" : "MMM d, h:mm a")}
+                            </span>
+                            <span className="hidden md:inline">
+                                {format(currentTime, use24Hour ? "HH:mm" : "h:mm a")}
+                            </span>
                         </span>
                     </div>
 
